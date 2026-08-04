@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 static device_info_t device_info = {
-    .name = "TEMP_LIVING_0001",
+    .name = "TEMP-LIVING-0001",
     .type = DEVICE_TYPE_TEMPERATURE,
     .firmware = "0.1.0",
     .hardware = "Rev A"
