@@ -16,13 +16,39 @@
 
 static wifi_status_t wifi_status;
 static EventGroupHandle_t wifi_event_group;
-static const char *TAG = "WIFI";
-
 static TaskHandle_t wifi_task_handle = NULL;
 
-static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
+static const char *TAG = "WIFI";
 
-static void wifi_task(void *arg);
+static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data){
+
+    if(event_base == WIFI_EVENT){
+        switch(event_id){
+            case WIFI_EVENT_STA_START:
+                LOG_INFO(TAG, "WiFi started");
+                wifi_status.state = WIFI_STATE_CONNECTING;
+                esp_wifi_connect();
+                break;
+            case WIFI_EVENT_STA_DISCONNECTED:
+                LOG_WARN(TAG, "Disconnected");
+                wifi_status.state = WIFI_STATE_DISCONNECTED;
+                wifi_status.rssi = 0;
+                xEventGroupClearBits(wifi_event_group, WIFI_CONNECTED_BIT);
+                break;
+        }
+    }
+    else if((event_base == IP_EVENT) && (event_id == IP_EVENT_STA_GOT_IP)){
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
+        wifi_status.state = WIFI_STATE_CONNECTED;
+        wifi_ap_record_t ap_info;
+        if(esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK)
+            wifi_status.rssi = ap_info.rssi;
+        snprintf(wifi_status.ip, sizeof(wifi_status.ip), IPSTR, IP2STR(&event->ip_info.ip));
+        xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
+        LOG_INFO(TAG, "Got IP: %s", wifi_status.ip);
+    }
+
+}
 
 void wifi_manager_init(void){
 
@@ -46,32 +72,6 @@ void wifi_manager_init(void){
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_handler, NULL));
 
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_event_handler, NULL));
-
-}
-
-static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data){
-
-    if(event_base == WIFI_EVENT){
-        switch(event_id){
-            case WIFI_EVENT_STA_START:
-                LOG_INFO(TAG, "WiFi started");
-                wifi_status.state = WIFI_STATE_CONNECTING;
-                esp_wifi_connect();
-                break;
-            case WIFI_EVENT_STA_DISCONNECTED:
-                LOG_WARN(TAG, "Disconnected");
-                wifi_status.state = WIFI_STATE_DISCONNECTED;
-                xEventGroupClearBits(wifi_event_group, WIFI_CONNECTED_BIT);
-                break;
-        }
-    }
-    else if((event_base == IP_EVENT) && (event_id == IP_EVENT_STA_GOT_IP)){
-        ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
-        wifi_status.state = WIFI_STATE_CONNECTED;
-        snprintf(wifi_status.ip, sizeof(wifi_status.ip), IPSTR, IP2STR(&event->ip_info.ip));
-        xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_BIT);
-        LOG_INFO(TAG, "Got IP: %s", wifi_status.ip);
-    }
 
 }
 
@@ -119,4 +119,9 @@ void wifi_manager_start(void){
 
     xTaskCreate(wifi_task, "wifi_task", 4096, NULL, 5, &wifi_task_handle);
     
+}
+
+const wifi_status_t *wifi_manager_get_status(void){
+    
+    return &wifi_status;
 }
