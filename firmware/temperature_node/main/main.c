@@ -5,7 +5,6 @@
 #include "wifi_manager.h"
 #include "nvs_flash.h"
 #include "sensor_manager.h"
-#include "telemetry_manager.h"
 
 #define TAG "MAIN"
 
@@ -33,9 +32,5 @@ void app_main(void){
     sensor_manager_init();
 
     sensor_manager_start();
-
-    vTaskDelay(pdMS_TO_TICKS(6000));
-
-    telemetry_manager_print();
 
 }
