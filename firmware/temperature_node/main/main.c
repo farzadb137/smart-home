@@ -4,6 +4,7 @@
 #include "system_info.h"
 #include "wifi_manager.h"
 #include "nvs_flash.h"
+#include "sensor_manager.h"
 
 #define TAG "MAIN"
 
@@ -28,6 +29,8 @@ void app_main(void){
 
     wifi_manager_start();
 
-    LOG_INFO(TAG, "Application started");
+    sensor_manager_init();
+
+    sensor_manager_start();
 
 }
