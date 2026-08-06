@@ -6,16 +6,11 @@
 static const char *level_to_string(log_level_t level){
 
     switch(level){
-        case LOG_LEVEL_DEBUG:
-            return "DEBUG";
-        case LOG_LEVEL_INFO:
-            return "INFO";
-        case LOG_LEVEL_WARNING:
-            return "WARN";
-        case LOG_LEVEL_ERROR:
-            return "ERROR";
-        default:
-            return "UNKNOWN";
+        case LOG_LEVEL_DEBUG:   return "DEBUG";
+        case LOG_LEVEL_INFO:    return "INFO";
+        case LOG_LEVEL_WARNING: return "WARN";
+        case LOG_LEVEL_ERROR:   return "ERROR";
+        default:                return "UNKNOWN";
     }
 
 }

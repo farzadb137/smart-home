@@ -2,16 +2,18 @@
 
 #include <stdio.h>
 
-static device_info_t device_info = {
-    .name = "TEMP-LIVING-0001",
-    .type = DEVICE_TYPE_TEMPERATURE,
-    .firmware = "0.1.0",
-    .hardware = "Rev A"
-};
+static device_info_t device_info;
 
 
 void device_info_init(void){
     
+    device_info = (device_info_t){
+        .name = "TEMP-LIVING-0001",
+        .type = DEVICE_TYPE_TEMPERATURE,
+        .firmware = "0.1.0",
+        .hardware = "Rev A"
+    };
+
 }
 
 const device_info_t *device_info_get(void){
@@ -21,14 +23,10 @@ const device_info_t *device_info_get(void){
 const char *device_type_to_string(device_type_t type){
 
     switch(type){
-        case DEVICE_TYPE_TEMPERATURE:
-            return "Temperature Node";
-        case DEVICE_TYPE_SWITCH:
-            return "Smart Switch";
-        case DEVICE_TYPE_DOOR_SENSOR:
-            return "Door Sensor";
-        default:
-            return "Unknown";
+        case DEVICE_TYPE_TEMPERATURE:   return "Temperature Node";
+        case DEVICE_TYPE_SWITCH:        return "Smart Switch";
+        case DEVICE_TYPE_DOOR_SENSOR:   return "Door Sensor";
+        default:                        return "Unknown";
     }
 
 }
@@ -44,4 +42,5 @@ void device_info_print(void){
     printf("Firmware    : %s\n", info->firmware);
     printf("Hardware    : %s\n", info->hardware);
     printf("==============================\n");
+    
 }
