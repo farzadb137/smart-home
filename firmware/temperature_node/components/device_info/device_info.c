@@ -1,19 +1,25 @@
 #include "device_info.h"
 
-#include <stdio.h>
+#include "config_manager.h"
+
+#include <string.h>
 
 static device_info_t device_info;
 
 
 void device_info_init(void){
-    
+
+    const app_config_t *config = config_manager_get();
+
     device_info = (device_info_t){
-        .name = "TEMP-LIVING-0001",
+        .name = "",
         .type = DEVICE_TYPE_TEMPERATURE,
         .firmware = "0.1.0",
         .hardware = "Rev A"
     };
 
+    strncpy((char *)device_info.name, config->device_name, sizeof(device_info.name) - 1);
+    
 }
 
 const device_info_t *device_info_get(void){

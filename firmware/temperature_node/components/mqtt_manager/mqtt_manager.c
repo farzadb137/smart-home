@@ -1,9 +1,11 @@
 #include "mqtt_manager.h"
-#include "mqtt_config.h"
 
 #include "logger.h"
+#include "config_manager.h"
+#include "topic_manager.h"
 
 #include "mqtt_client.h"
+
 #include <stdbool.h>
 
 
@@ -17,7 +19,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     switch(event_id){
         case MQTT_EVENT_CONNECTED:
             mqtt_connected = true;
-            mqtt_manager_publish("home/devices/TEMP-LIVING-0001/status", "{\"online\":true}", 1, true);
+            mqtt_manager_publish(topic_manager_get_status(), "{\"online\":true}", 1, true);
             LOG_INFO(TAG, "MQTT connected");
             break;
         case MQTT_EVENT_DISCONNECTED:
@@ -42,9 +44,13 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 
 esp_err_t mqtt_manager_init(void){
 
+    const app_config_t *config = config_manager_get();
+    if(config == NULL)
+        return ESP_ERR_INVALID_STATE;
+
     esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = MQTT_URI,
-        .session.last_will.topic = "home/devices/TEMP-LIVING-0001/status",
+        .broker.address.uri = config->mqtt_uri,
+        .session.last_will.topic = topic_manager_get_status(),
         .session.last_will.msg = "{\"online\":false}",
         .session.last_will.msg_len = 16,
         .session.last_will.qos = 1,

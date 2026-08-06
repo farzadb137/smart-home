@@ -10,10 +10,9 @@
 #include "telemetry_serializer.h"
 #include "wifi_manager.h"
 #include "mqtt_manager.h"
+#include "topic_manager.h"
 #include "cJSON.h"
 
-#define TELEMETRY_TOPIC     "home/temperature_node/TEMP-LIVING-0001/telemetry"
-#define STATUS_TOPIC    "home/devices/TEMP-LIVING-0001/status"
 
 
 static const char *TAG = "APP";
@@ -35,7 +34,7 @@ static void telemetry_task(void *args){
 
             if(mqtt_manager_is_connected()){
 
-                esp_err_t ret = mqtt_manager_publish(TELEMETRY_TOPIC, json, 1, false);
+                esp_err_t ret = mqtt_manager_publish(topic_manager_get_telemetry(), json, 1, false);
                 if(ret != ESP_OK)
                     LOG_WARN(TAG, "Telemetry publish failed");
 
@@ -71,7 +70,7 @@ static void status_task(void *args){
             LOG_INFO(TAG, "Publishing status:\n%s", json);
 
             if(mqtt_manager_is_connected()){
-                esp_err_t ret = mqtt_manager_publish(STATUS_TOPIC, json, 1, true);
+                esp_err_t ret = mqtt_manager_publish(topic_manager_get_status(), json, 1, true);
                 if(ret != ESP_OK)
                     LOG_WARN(TAG, "Telemetry publish failed");
             }

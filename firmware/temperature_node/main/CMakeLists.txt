@@ -3,6 +3,7 @@ idf_component_register(SRCS "main.c"
                     REQUIRES 
                         logger
                         nvs_flash
+                        config_manager
                         device_info
                         system_info
                         sensor_manager

@@ -1,5 +1,5 @@
 idf_component_register(
     SRCS "wifi_manager.c"
     INCLUDE_DIRS "include"
-    REQUIRES logger esp_wifi
+    REQUIRES logger esp_wifi config_manager
 )
