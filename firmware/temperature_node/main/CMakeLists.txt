@@ -2,9 +2,11 @@ idf_component_register(SRCS "main.c"
                     INCLUDE_DIRS "."
                     REQUIRES 
                         logger
+                        nvs_flash
                         device_info
                         system_info
-                        wifi_manager
-                        nvs_flash
                         sensor_manager
+                        wifi_manager
+                        mqtt_manager
+                        app_manager
 )

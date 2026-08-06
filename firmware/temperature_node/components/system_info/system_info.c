@@ -15,24 +15,34 @@ void system_info_init(void){
     esp_chip_info_t chip_info;
 
     esp_chip_info(&chip_info);
-    system_info.chip_model = "ESP32-C6";
+    switch(chip_info.model){
+        case CHIP_ESP32:        system_info.chip_model = "ESP32";       break;
+        case CHIP_ESP32S2:      system_info.chip_model = "ESP32-S2";    break;
+        case CHIP_ESP32S3:      system_info.chip_model = "ESP32-S3";    break;
+        case CHIP_ESP32C3:      system_info.chip_model = "ESP32-C3";    break;
+        case CHIP_ESP32C2:      system_info.chip_model = "ESP32-C2";    break;
+        case CHIP_ESP32C6:      system_info.chip_model = "ESP32-C6";    break;
+        case CHIP_ESP32H2:      system_info.chip_model = "ESP32-H2";    break;
+        case CHIP_ESP32P4:      system_info.chip_model = "ESP32-P4";    break;
+        case CHIP_ESP32C61:     system_info.chip_model = "ESP32-C61";   break;
+        case CHIP_ESP32C5:      system_info.chip_model = "ESP32-C5";    break;
+        case CHIP_ESP32H21:     system_info.chip_model = "ESP32-H21";   break;
+        case CHIP_ESP32H4:      system_info.chip_model = "ESP32-H4";    break;
+        default:                system_info.reset_reason = "Other";     break;
+    }
 
     switch(esp_reset_reason()){
-        case ESP_RST_POWERON:
-            system_info.reset_reason = "Power On";
-            break;
-        case ESP_RST_SW:
-            system_info.reset_reason = "Software Reset";
-            break;
-        case ESP_RST_WDT:
-            system_info.reset_reason = "Watchdog Reset";
-            break;
-        case ESP_RST_BROWNOUT:
-            system_info.reset_reason = "Brownout";
-            break;
-        default:
-            system_info.reset_reason = "Other";
-            break;
+        case ESP_RST_UNKNOWN:   system_info.reset_reason = "Unknown";                   break;
+        case ESP_RST_POWERON:   system_info.reset_reason = "Power On";                  break;
+        case ESP_RST_EXT:       system_info.reset_reason = "External Pin";              break;
+        case ESP_RST_SW:        system_info.reset_reason = "Software Reset";            break;
+        case ESP_RST_PANIC:     system_info.reset_reason = "Exception or Panic";        break;
+        case ESP_RST_INT_WDT:   system_info.reset_reason = "Interrupt Watchdog";        break;
+        case ESP_RST_TASK_WDT:  system_info.reset_reason = "Task Watchdog";             break;
+        case ESP_RST_WDT:       system_info.reset_reason = "Watchdog Reset";            break;
+        case ESP_RST_DEEPSLEEP: system_info.reset_reason = "Sleep Mode";                break;
+        case ESP_RST_BROWNOUT:  system_info.reset_reason = "Brownout";                  break;
+        default:                system_info.reset_reason = "Other";                     break;
     }
 
 }

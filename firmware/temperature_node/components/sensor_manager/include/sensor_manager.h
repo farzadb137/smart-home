@@ -18,7 +18,6 @@ typedef struct{
 
 
 void sensor_manager_init(void);
-void sensor_manager_start(void);
 const sensor_data_t *sensor_manager_get_data(void);
 
 

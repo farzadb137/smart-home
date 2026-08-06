@@ -9,11 +9,6 @@ extern "C" {
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 
-#define WIFI_CONNECTED_BIT BIT0
-
-#define WIFI_RETRY_INITIAL_DELAY_MS 5000
-#define WIFI_RETRY_MAX_DELAY_MS 60000
-
 
 typedef enum{
     WIFI_STATE_DISCONNECTED,
@@ -32,10 +27,7 @@ typedef struct{
 
 
 void wifi_manager_init(void);
-void wifi_manager_start(void);
 const wifi_status_t *wifi_manager_get_status(void);
-EventGroupHandle_t wifi_manager_get_event_group(void);
-
 
 
 #ifdef __cplusplus
