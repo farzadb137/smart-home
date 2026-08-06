@@ -1,7 +1,8 @@
 #include "wifi_manager.h"
-#include "wifi_config.h"
 
 #include "logger.h"
+
+#include "config_manager.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -87,9 +88,10 @@ static void wifi_task(void *arg){
 void wifi_manager_init(void){
 
     wifi_event_group = xEventGroupCreate();
+    const app_config_t *config = config_manager_get();
 
     memset(&wifi_status, 0, sizeof(wifi_status));
-    strcpy(wifi_status.ssid, WIFI_SSID);
+    strcpy(wifi_status.ssid, config->wifi_ssid);
 
     esp_netif_init();
     esp_event_loop_create_default();
@@ -104,8 +106,11 @@ void wifi_manager_init(void){
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_event_handler, NULL));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    
+    wifi_config_t wifi_config = {0};
+    strncpy((char *)wifi_config.sta.ssid, config->wifi_ssid, sizeof(wifi_config.sta.ssid) - 1);
+    strncpy((char *)wifi_config.sta.password, config->wifi_password, sizeof(wifi_config.sta.password) - 1);
 
-    wifi_config_t wifi_config = {.sta = {.ssid = WIFI_SSID, .password = WIFI_PASSWORD}};
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 
     ESP_ERROR_CHECK(esp_wifi_start());

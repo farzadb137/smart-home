@@ -12,7 +12,7 @@ typedef enum{
 }device_type_t;
 
 typedef struct{
-    const char *name;
+    char name[32];
     device_type_t type;
     const char *firmware;
     const char *hardware;

@@ -1,4 +1,5 @@
 #include "logger.h"
+#include "config_manager.h"
 #include "nvs_flash.h"
 #include "device_info.h"
 #include "system_info.h"
@@ -18,22 +19,25 @@ void app_main(void){
         ESP_ERROR_CHECK(nvs_flash_init());
     }
 
-    // 2. Static information
+    // 2. configuration
+    config_manager_init();
+
+    // 3. Static information
     device_info_init();
 
-    // 3. System information
+    // 4. System information
     system_info_init();
 
-    // 4. Hardware
+    // 5. Hardware
     sensor_manager_init();
 
-    // 5. Network
+    // 6. Network
     wifi_manager_init();
 
-    // 6. Communication
+    // 7. Communication
     mqtt_manager_init();
 
-    // 7. Application tasks
+    // 8. Application tasks
     app_manager_start();
 
 }
