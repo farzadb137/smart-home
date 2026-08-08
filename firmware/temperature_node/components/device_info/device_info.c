@@ -14,7 +14,7 @@ void device_info_init(void){
     device_info = (device_info_t){
         .name = "",
         .type = DEVICE_TYPE_TEMPERATURE,
-        .firmware = "0.1.0",
+        .firmware = "0.3.0",
         .hardware = "Rev A"
     };
 

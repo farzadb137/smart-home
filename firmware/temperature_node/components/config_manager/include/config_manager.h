@@ -13,8 +13,10 @@ typedef struct{
 
 
 esp_err_t config_manager_init(void);
-
 const app_config_t *config_manager_get(void);
+esp_err_t config_manager_save(void);
+esp_err_t config_manager_update_device_name(const char *device_name);
+esp_err_t config_manager_update_mqtt_uri(const char *uri);
 
 
 #endif

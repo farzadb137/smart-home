@@ -1,0 +1,12 @@
+"C:\Program Files\mosquitto\mosquitto.exe" -c "C:\Users\farzad\mqtt\mosquitto.conf" -v
+
+mosquitto_sub.exe -h 127.0.0.1 -t "#" -v
+
+
+
+mosquitto_pub -h 192.168.1.100 -t home/devices/TEMP-LIVING-0001/command -m "{\"command\":\"get_config\"}"
+
+mosquitto_pub -h 192.168.1.100 -t home/devices/TEMP-LIVING-0001/command -m "{\"command\":\"get_status\"}"
+
+mosquitto_pub -h 192.168.1.100 -t home/devices/TEMP-LIVING-0001/command -m "{\"command\":\"set_config\",\"data\":{\"device_name\":\"TEMP-KITCHEN-0001\"}}"
+mosquitto_pub -h 192.168.1.100 -t home/devices/TEMP-KITCHEN-0001/command -m "{\"command\":\"set_config\",\"data\":{\"device_name\":\"TEMP-LIVING-0001\"}}"
