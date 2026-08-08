@@ -30,10 +30,9 @@ static void telemetry_task(void *args){
         char *json = telemetry_serializer_to_json(&telemetry);
         if(json != NULL){
 
-            LOG_INFO(TAG, "Publishing telemetry:\n%s", json);
-
             if(mqtt_manager_is_connected()){
 
+                LOG_INFO(TAG, "Publishing telemetry:\n%s", json);
                 esp_err_t ret = mqtt_manager_publish(topic_manager_get_telemetry(), json, 1, false);
                 if(ret != ESP_OK)
                     LOG_WARN(TAG, "Telemetry publish failed");
@@ -51,6 +50,8 @@ static void telemetry_task(void *args){
 
 static void status_task(void *args){
 
+    LOG_INFO(TAG, "Status task started");
+
     while(1){
 
         cJSON *root = cJSON_CreateObject();
@@ -67,12 +68,13 @@ static void status_task(void *args){
         char *json = cJSON_PrintUnformatted(root);
         if(json != NULL){
 
-            LOG_INFO(TAG, "Publishing status:\n%s", json);
-
             if(mqtt_manager_is_connected()){
+
+                LOG_INFO(TAG, "Publishing status:\n%s", json);
                 esp_err_t ret = mqtt_manager_publish(topic_manager_get_status(), json, 1, true);
                 if(ret != ESP_OK)
                     LOG_WARN(TAG, "Telemetry publish failed");
+                
             }
 
             cJSON_free(json);

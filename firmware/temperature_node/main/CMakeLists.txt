@@ -2,7 +2,6 @@ idf_component_register(SRCS "main.c"
                     INCLUDE_DIRS "."
                     REQUIRES 
                         logger
-                        nvs_flash
                         config_manager
                         device_info
                         system_info
