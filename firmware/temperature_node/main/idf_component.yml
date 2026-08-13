@@ -16,3 +16,4 @@ dependencies:
   #   public: true
   espressif/cjson: '*'
   espressif/mqtt: '*'
+  espressif/led_strip: ^3.0.3

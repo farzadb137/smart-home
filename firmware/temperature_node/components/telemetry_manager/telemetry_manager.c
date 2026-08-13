@@ -10,6 +10,10 @@
 
 static const char *TAG = "TELEMETRY";
 
+/*==========================================================
+ * Public Functions
+ *=========================================================*/
+
 void telemetry_manager_get(telemetry_t *data){
 
     memset(data, 0, sizeof(telemetry_t));

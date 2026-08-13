@@ -2,20 +2,30 @@
 
 #include "config_manager.h"
 
+#include "esp_mac.h"
 #include <string.h>
 
 static device_info_t device_info;
 
+/*==========================================================
+ * Public Functions
+ *=========================================================*/
 
 void device_info_init(void){
 
     const app_config_t *config = config_manager_get();
 
+    uint8_t mac[6];
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+
     device_info = (device_info_t){
-        .name = "",
+        .id = ((uint64_t)mac[0] << 40) | ((uint64_t)mac[1] << 32) | ((uint64_t)mac[2] << 24) | ((uint64_t)mac[3] << 16) | ((uint64_t)mac[4] << 8) | ((uint64_t)mac[5]),
+        .manufacturer = "BSM",
         .type = DEVICE_TYPE_TEMPERATURE,
+        .model = "SmartTemp-V1.0",
         .firmware = "0.3.0",
-        .hardware = "Rev A"
+        .hardware = "Rev A",
+        .name = ""
     };
 
     strncpy((char *)device_info.name, config->device_name, sizeof(device_info.name) - 1);

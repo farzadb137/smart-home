@@ -9,6 +9,9 @@
 
 static system_info_t system_info;
 
+/*==========================================================
+ * Public Functions
+ *=========================================================*/
 
 void system_info_init(void){
 

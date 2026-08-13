@@ -2,6 +2,9 @@
 
 #include "cJSON.h"
 
+/*==========================================================
+ * Public Functions
+ *=========================================================*/
 
 char *telemetry_serializer_to_json(const telemetry_t *telemetry){
 

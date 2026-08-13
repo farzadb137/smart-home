@@ -13,9 +13,11 @@
 #include "topic_manager.h"
 #include "cJSON.h"
 
-
-
 static const char *TAG = "APP";
+
+/*==========================================================
+ * Private Functions
+ *=========================================================*/
 
 static void telemetry_task(void *args){
 
@@ -87,6 +89,9 @@ static void status_task(void *args){
     }
 }
 
+/*==========================================================
+ * Public Functions
+ *=========================================================*/
 
 void app_manager_start(void){
 
