@@ -16,6 +16,10 @@ static TaskHandle_t sensor_task_handle;
 
 static const char *TAG = "SENSOR";
 
+/*==========================================================
+ * Private Functions
+ *=========================================================*/
+
 static void sensor_task(void *arg){
 
     while(1){
@@ -42,6 +46,10 @@ static void sensor_task(void *arg){
 
     }
 }
+
+/*==========================================================
+ * Public Functions
+ *=========================================================*/
 
 void sensor_manager_init(void){
 

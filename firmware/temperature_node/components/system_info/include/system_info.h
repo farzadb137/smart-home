@@ -8,10 +8,10 @@ extern "C" {
 #include <stdint.h>
 
 typedef struct{
-    uint32_t uptime_seconds;
-    uint32_t free_heap;
     const char *reset_reason;
     const char *chip_model;
+    uint32_t uptime_seconds;
+    uint32_t free_heap;
 }system_info_t;
 
 

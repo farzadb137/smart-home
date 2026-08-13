@@ -11,20 +11,9 @@
 
 static int ds18b20_gpio_num;
 
-esp_err_t ds18b20_init(int gpio_num){
-
-    ds18b20_gpio_num = gpio_num;
-
-    gpio_config_t io_conf = {
-        .pin_bit_mask = (1ULL << gpio_num),
-        .mode = GPIO_MODE_INPUT_OUTPUT_OD,
-        .pull_up_en = GPIO_PULLUP_ENABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE
-    };
-
-    return gpio_config(&io_conf);
-}
+/*==========================================================
+ * Private Functions
+ *=========================================================*/
 
 static bool onewire_reset(void){
 
@@ -125,6 +114,25 @@ static bool ds18b20_start_conversion(void){
     onewire_write_byte(DS18B20_CONVERT_T);
 
     return true;
+}
+
+/*==========================================================
+ * Public Functions
+ *=========================================================*/
+
+esp_err_t ds18b20_init(int gpio_num){
+
+    ds18b20_gpio_num = gpio_num;
+
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << gpio_num),
+        .mode = GPIO_MODE_INPUT_OUTPUT_OD,
+        .pull_up_en = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE
+    };
+
+    return gpio_config(&io_conf);
 }
 
 bool ds18b20_read_temperature(float *temperature){

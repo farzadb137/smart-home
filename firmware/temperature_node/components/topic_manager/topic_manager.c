@@ -10,6 +10,9 @@ static char status_topic[128];
 static char command_topic[128];
 static char response_topic[128];
 
+/*==========================================================
+ * Public Functions
+ *=========================================================*/
 
 const char *topic_manager_get_telemetry(void){
 

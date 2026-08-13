@@ -1,5 +1,6 @@
 #include "mqtt_manager.h"
 
+#include "led_manager.h"
 #include "logger.h"
 #include "config_manager.h"
 #include "topic_manager.h"
@@ -15,6 +16,10 @@ static const char *TAG = "MQTT";
 static esp_mqtt_client_handle_t client = NULL;
 static bool mqtt_connected = false;
 
+/*==========================================================
+ * Private Functions
+ *=========================================================*/
+
 static void mqtt_command_response(const char *payload){
 
     mqtt_manager_publish(topic_manager_get_response(), payload, 1, false);
@@ -27,6 +32,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         case MQTT_EVENT_CONNECTED:
         {
             mqtt_connected = true;
+            led_manager_set_state(LED_STATE_MQTT_CONNECTED);
             LOG_INFO(TAG, "MQTT connected");
 
             const char *cmd_topic = topic_manager_get_command();
@@ -38,6 +44,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
             break;
         }
         case MQTT_EVENT_DISCONNECTED:
+            led_manager_set_state(LED_STATE_WIFI_CONNECTED);
             mqtt_connected = false;
             LOG_INFO(TAG, "MQTT disconnected");
             break;
@@ -49,6 +56,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
                 LOG_ERROR(TAG, "MQTT error");
             break;
         case MQTT_EVENT_BEFORE_CONNECT:
+            led_manager_set_state(LED_STATE_MQTT_CONNECTING);
             LOG_INFO(TAG, "Connecting to broker...");
             break;
         case MQTT_EVENT_DATA:
@@ -63,6 +71,10 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 
 }
+
+/*==========================================================
+ * Public Functions
+ *=========================================================*/
 
 esp_err_t mqtt_manager_init(void){
 

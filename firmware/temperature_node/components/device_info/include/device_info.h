@@ -5,6 +5,8 @@
 extern "C"{
 #endif
 
+#include <stdint.h>
+
 typedef enum{
     DEVICE_TYPE_TEMPERATURE,
     DEVICE_TYPE_SWITCH,
@@ -13,6 +15,9 @@ typedef enum{
 
 typedef struct{
     char name[32];
+    uint64_t id;
+    const char *manufacturer;
+    const char *model;
     device_type_t type;
     const char *firmware;
     const char *hardware;

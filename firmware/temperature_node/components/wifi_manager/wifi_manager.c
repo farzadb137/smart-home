@@ -1,7 +1,7 @@
 #include "wifi_manager.h"
 
+#include "led_manager.h"
 #include "logger.h"
-
 #include "config_manager.h"
 
 #include "freertos/FreeRTOS.h"
@@ -25,6 +25,10 @@ static TaskHandle_t wifi_task_handle = NULL;
 
 static const char *TAG = "WIFI";
 
+/*==========================================================
+ * Private Functions
+ *=========================================================*/
+
 static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data){
 
     if(event_base == WIFI_EVENT){
@@ -35,6 +39,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
                 esp_wifi_connect();
                 break;
             case WIFI_EVENT_STA_DISCONNECTED:
+                led_manager_set_state(LED_STATE_WIFI_CONNECTING);
                 LOG_WARN(TAG, "Disconnected");
                 wifi_status.state = WIFI_STATE_DISCONNECTED;
                 wifi_status.rssi = 0;
@@ -47,6 +52,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
     else if((event_base == IP_EVENT) && (event_id == IP_EVENT_STA_GOT_IP)){
         ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
         wifi_status.state = WIFI_STATE_CONNECTED;
+        led_manager_set_state(LED_STATE_WIFI_CONNECTED);
         wifi_ap_record_t ap_info;
         if(esp_wifi_sta_get_ap_info(&ap_info) == ESP_OK)
             wifi_status.rssi = ap_info.rssi;
@@ -85,6 +91,10 @@ static void wifi_task(void *arg){
     }
 }
 
+/*==========================================================
+ * Public Functions
+ *=========================================================*/
+
 void wifi_manager_init(void){
 
     wifi_event_group = xEventGroupCreate();
@@ -114,6 +124,8 @@ void wifi_manager_init(void){
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 
     ESP_ERROR_CHECK(esp_wifi_start());
+
+    led_manager_set_state(LED_STATE_WIFI_CONNECTING);
 
     xTaskCreate(wifi_task, "wifi_task", 4096, NULL, 5, &wifi_task_handle);
 

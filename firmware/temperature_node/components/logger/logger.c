@@ -3,6 +3,10 @@
 #include "stdio.h"
 #include "stdarg.h"
 
+/*==========================================================
+ * Private Functions
+ *=========================================================*/
+
 static const char *level_to_string(log_level_t level){
 
     switch(level){
@@ -14,6 +18,10 @@ static const char *level_to_string(log_level_t level){
     }
 
 }
+
+/*==========================================================
+ * Public Functions
+ *=========================================================*/
 
 void logger_init(void){
 
