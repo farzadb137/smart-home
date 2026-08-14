@@ -2,10 +2,12 @@
 
 #include "logger.h"
 #include "config_manager.h"
-#include "wifi_manager.h"
-#include "mqtt_manager.h"
+#include "status_manager.h"
+#include "telemetry_manager.h"
 
-#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 #include "esp_system.h"
 #include "cJSON.h"
 
@@ -25,15 +27,17 @@ static command_response_callback_t response_callback = NULL;
 
 static void handle_get_config(cJSON *root);
 static void handle_get_status(cJSON *root);
+static void handle_get_telemetry(cJSON *root);
 static void handle_set_config(cJSON *root);
 static void handle_restart(cJSON *root);
 
 
 static const command_entry_t command_table[] = {
-    { "get_config",     handle_get_config   },
-    { "get_status",     handle_get_status   },
-    { "set_config",     handle_set_config   },
-    { "restart",        handle_restart      },
+    { "get_config",     handle_get_config       },
+    { "get_status",     handle_get_status       },
+    { "get_telemetry",  handle_get_telemetry    },
+    { "set_config",     handle_set_config       },
+    { "restart",        handle_restart          },
 };
 
 #define COMMAND_COUNT (sizeof(command_table) / sizeof(command_table[0]))
@@ -70,16 +74,45 @@ static const command_entry_t command_table[] = {
 
 static void handle_get_status(cJSON *root){
 
-    const wifi_status_t *wifi_status = wifi_manager_get_status();
+    status_t status;
+    status_manager_get(&status);
 
     cJSON *response = cJSON_CreateObject();
     cJSON_AddBoolToObject(response, "success", true);
     cJSON *data = cJSON_AddObjectToObject(response, "data");
-    uint32_t uptime = esp_timer_get_time() / 1000000;
-    cJSON_AddNumberToObject(data, "uptime", uptime);
-    cJSON_AddBoolToObject(data, "wifi", wifi_status->state == WIFI_STATE_CONNECTED);
-    cJSON_AddBoolToObject(data, "mqtt", mqtt_manager_is_connected());
-    cJSON_AddNumberToObject(data, "rssi", wifi_status->rssi);
+    cJSON_AddNumberToObject(data, "uptime", status.uptime);
+    cJSON_AddBoolToObject(data, "wifi", status.wifi_is_connected);
+    cJSON_AddNumberToObject(data, "rssi", status.rssi);
+    cJSON_AddBoolToObject(data, "mqtt", status.mqtt_is_connected);
+
+    send_response(response);
+
+    cJSON_Delete(response);
+
+}
+
+static void handle_get_telemetry(cJSON *root){
+
+    telemetry_t telemetry;
+    telemetry_manager_get(&telemetry);
+
+    cJSON *response = cJSON_CreateObject();
+    cJSON_AddBoolToObject(response, "success", true);
+    cJSON *data = cJSON_AddObjectToObject(response, "data");
+
+    cJSON *device = cJSON_AddObjectToObject(data, "device");
+    cJSON *system = cJSON_AddObjectToObject(data, "system");
+    cJSON *sensor = cJSON_AddObjectToObject(data, "sensor");
+
+    cJSON_AddNumberToObject(device, "id", telemetry.device_id);
+    cJSON_AddStringToObject(device, "name", telemetry.device_name);
+    cJSON_AddStringToObject(device, "firmware", telemetry.firmware);
+
+    cJSON_AddNumberToObject(system, "uptime", telemetry.uptime);
+    cJSON_AddNumberToObject(system, "rssi", telemetry.rssi);
+
+    cJSON_AddNumberToObject(sensor, "temperature", telemetry.temperature);
+    cJSON_AddBoolToObject(sensor, "valid", telemetry.sensor_valid);
 
     send_response(response);
 
@@ -130,7 +163,7 @@ static void handle_restart(cJSON *root){
 
     cJSON_Delete(response);
 
-    vTaskDelay(pdMS_TO_TICKS(500));
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     esp_restart();
 

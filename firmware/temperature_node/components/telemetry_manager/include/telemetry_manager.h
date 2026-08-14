@@ -6,6 +6,7 @@
 
 
 typedef struct{
+    uint64_t device_id;
     char device_name[32];
     char firmware[16];
     float temperature;
@@ -18,6 +19,7 @@ typedef struct{
 
 void telemetry_manager_init(void);
 void telemetry_manager_get(telemetry_t *data);
+char *telemetry_manager_to_json(const telemetry_t *telemetry);
 void telemetry_manager_print(void);
 
 

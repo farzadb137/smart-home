@@ -88,7 +88,7 @@ esp_err_t config_manager_init(void){
 
     }
     else if(err == ESP_OK){
-        LOG_INFO(TAG, "Configuration loaded from NVS");
+        LOG_INFO(TAG, "Configuration loaded from NVS Version: %d", config_storage.version);
     }
     else{
         LOG_ERROR(TAG, "Failed to load configuration (%s)", esp_err_to_name(err));
