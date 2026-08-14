@@ -6,4 +6,5 @@ idf_component_register(
         system_info
         sensor_manager
         wifi_manager
+        cjson
 )

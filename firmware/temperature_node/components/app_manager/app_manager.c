@@ -1,16 +1,14 @@
 #include "app_manager.h"
 
 #include "logger.h"
+#include "telemetry_manager.h"
+#include "status_manager.h"
+#include "mqtt_manager.h"
+#include "topic_manager.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "system_info.h"
-#include "telemetry_manager.h"
-#include "telemetry_serializer.h"
-#include "wifi_manager.h"
-#include "mqtt_manager.h"
-#include "topic_manager.h"
 #include "cJSON.h"
 
 static const char *TAG = "APP";
@@ -29,7 +27,7 @@ static void telemetry_task(void *args){
 
         telemetry_manager_get(&telemetry);
 
-        char *json = telemetry_serializer_to_json(&telemetry);
+        char *json = telemetry_manager_to_json(&telemetry);
         if(json != NULL){
 
             if(mqtt_manager_is_connected()){
@@ -54,20 +52,13 @@ static void status_task(void *args){
 
     LOG_INFO(TAG, "Status task started");
 
+    status_t status;
+
     while(1){
 
-        cJSON *root = cJSON_CreateObject();
+        status_manager_get(&status);
 
-        const system_info_t *system = system_info_get();
-        const wifi_status_t *wifi = wifi_manager_get_status();
-
-        cJSON_AddBoolToObject(root, "online", true);
-        cJSON_AddNumberToObject(root, "uptime", system->uptime_seconds);
-        cJSON_AddBoolToObject(root, "wifi", wifi->state == WIFI_STATE_CONNECTED);
-        cJSON_AddBoolToObject(root, "mqtt", mqtt_manager_is_connected());
-        cJSON_AddNumberToObject(root, "rssi", wifi->rssi);
-
-        char *json = cJSON_PrintUnformatted(root);
+        char *json = status_manager_to_json(&status);
         if(json != NULL){
 
             if(mqtt_manager_is_connected()){
@@ -75,16 +66,15 @@ static void status_task(void *args){
                 LOG_INFO(TAG, "Publishing status:\n%s", json);
                 esp_err_t ret = mqtt_manager_publish(topic_manager_get_status(), json, 1, true);
                 if(ret != ESP_OK)
-                    LOG_WARN(TAG, "Telemetry publish failed");
-                
+                    LOG_WARN(TAG, "Status publish failed");
+
             }
 
             cJSON_free(json);
+
         }
 
-        cJSON_Delete(root);
-
-        vTaskDelay(pdMS_TO_TICKS(30000));
+        vTaskDelay(pdMS_TO_TICKS(11000));
 
     }
 }
