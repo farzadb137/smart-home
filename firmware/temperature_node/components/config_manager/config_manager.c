@@ -6,8 +6,8 @@
 #include "nvs.h"
 #include <string.h>
 
-#define APP_CONFIG_VERSION  1
-#define APP_CONFIG_MAGIC UINT32_C(0x3D594E4B)
+#define APP_CONFIG_VERSION  2
+#define APP_CONFIG_MAGIC UINT32_C(0x3D593E4B)
 
 typedef struct{
     uint32_t magic;
@@ -43,9 +43,6 @@ static void config_set_defaults(void){
     config_storage.magic = APP_CONFIG_MAGIC;
     config_storage.version = APP_CONFIG_VERSION;
 
-    strcpy(config_storage.config.wifi_ssid, "TP-LINK_FHB");
-    strcpy(config_storage.config.wifi_password, "12402055");
-    strcpy(config_storage.config.mqtt_uri, "mqtt://192.168.1.160");
     strcpy(config_storage.config.device_name, "TEMP-DEFAULT-0001");
 
 }
@@ -158,4 +155,51 @@ esp_err_t config_manager_update_mqtt_uri(const char *uri){
         memcpy(config_storage.config.mqtt_uri, old_uri, sizeof(old_uri));
 
     return err;
+}
+
+esp_err_t config_manager_update_wifi_credentials(const char *ssid, const char *password){
+
+    if((ssid == NULL) || (password == NULL))
+        return ESP_ERR_INVALID_ARG;
+
+    char old_ssid[sizeof(config_storage.config.wifi_ssid)];
+    strncpy(old_ssid, config_storage.config.wifi_ssid, sizeof(old_ssid) - 1);
+    old_ssid[sizeof(old_ssid) - 1] = '\0';
+
+    char old_password[sizeof(config_storage.config.wifi_password)];
+    strncpy(old_password, config_storage.config.wifi_password, sizeof(old_password) - 1);
+    old_password[sizeof(old_password) - 1] = '\0';
+
+    strncpy(config_storage.config.wifi_ssid, ssid, sizeof(config_storage.config.wifi_ssid) - 1);
+    config_storage.config.wifi_ssid[sizeof(config_storage.config.wifi_ssid) - 1] = '\0';
+
+    strncpy(config_storage.config.wifi_password, password, sizeof(config_storage.config.wifi_password) - 1);
+    config_storage.config.wifi_password[sizeof(config_storage.config.wifi_password) - 1] = '\0';
+
+    esp_err_t err = config_manager_save();
+    if(err != ESP_OK){
+        memcpy(config_storage.config.wifi_ssid, old_ssid, sizeof(old_ssid));
+        memcpy(config_storage.config.wifi_password, old_password, sizeof(old_password));
+    }
+
+    return err;
+}
+
+esp_err_t config_manager_mark_provisioned(void){
+
+    config_storage.config.provisioned = true;
+
+    return config_manager_save();
+}
+
+esp_err_t config_manager_factory_reset(void){
+
+    config_set_defaults();
+
+    return config_manager_save();
+}
+
+bool config_manager_is_provisioned(void){
+
+    return config_storage.config.provisioned;
 }

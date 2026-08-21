@@ -30,6 +30,7 @@ static void handle_get_status(cJSON *root);
 static void handle_get_telemetry(cJSON *root);
 static void handle_set_config(cJSON *root);
 static void handle_restart(cJSON *root);
+static void handle_factory_reset(cJSON *root);
 
 
 static const command_entry_t command_table[] = {
@@ -38,6 +39,7 @@ static const command_entry_t command_table[] = {
     { "get_telemetry",  handle_get_telemetry    },
     { "set_config",     handle_set_config       },
     { "restart",        handle_restart          },
+    { "factory_reset",  handle_factory_reset    },
 };
 
 #define COMMAND_COUNT (sizeof(command_table) / sizeof(command_table[0]))
@@ -166,6 +168,31 @@ static void handle_restart(cJSON *root){
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     esp_restart();
+
+}
+
+static void handle_factory_reset(cJSON *root){
+
+    bool factory_reset_done = false;
+
+    if(config_manager_factory_reset() == ESP_OK)
+        factory_reset_done = true;
+
+    cJSON *response = cJSON_CreateObject();
+
+    cJSON_AddBoolToObject(response, "success", factory_reset_done);
+
+    cJSON *data = cJSON_AddObjectToObject(response, "data");
+    cJSON_AddStringToObject(data, "message", factory_reset_done?"Factory reset, restarting":"NVS failed");
+
+    send_response(response);
+
+    cJSON_Delete(response);
+
+    if(factory_reset_done){
+        vTaskDelay(pdMS_TO_TICKS(1000));
+        esp_restart();
+    }
 
 }
 

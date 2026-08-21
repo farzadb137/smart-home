@@ -54,9 +54,7 @@ char *status_manager_to_json(const status_t *status){
     cJSON_AddNumberToObject(root, "id", status->device_id);
     cJSON_AddBoolToObject(root, "online", status->online);
     cJSON_AddNumberToObject(root, "uptime", status->uptime);
-    cJSON_AddBoolToObject(root, "wifi", status->wifi_is_connected);
     cJSON_AddNumberToObject(root, "rssi", status->rssi);
-    cJSON_AddBoolToObject(root, "mqtt", status->mqtt_is_connected);
 
     char *json = cJSON_PrintUnformatted(root);
 
