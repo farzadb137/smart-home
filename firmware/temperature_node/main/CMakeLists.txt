@@ -4,8 +4,10 @@ idf_component_register(SRCS "main.c"
                         led_manager
                         logger
                         config_manager
+                        button_manager
                         device_info
                         system_info
+                        provision_manager
                         sensor_manager
                         wifi_manager
                         mqtt_manager

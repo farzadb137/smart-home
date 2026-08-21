@@ -2,20 +2,23 @@ import sqlite3
 from config import DATABASE_PATH
 from datetime import datetime, timezone
 
+CURRENT_SCHEMA_VERSION = 1
 
 def get_connection():
 	connection = sqlite3.connect(DATABASE_PATH)
+	connection.row_factory = sqlite3.Row
 	connection.execute("PRAGMA foreign_keys = ON")
 	connection.execute("PRAGMA journal_mode = WAL")
 	return connection
 
-def init_database_v2():
+def init_database_v1():
 	connection = get_connection()
 	connection.execute(
 		"""
 		CREATE TABLE IF NOT EXISTS devices(
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			device_name TEXT NOT NULL UNIQUE,
+			hardware_id INTEGER NOT NULL UNIQUE,
+			device_name TEXT NOT NULL,
 			device_type TEXT NOT NULL DEFAULT 'temperature_sensor',
 			manufacturer TEXT,
 			model TEXT,
@@ -44,6 +47,7 @@ def init_database_v2():
 			device_id INTEGER NOT NULL,
 			timestamp TEXT NOT NULL,
 			temperature REAL,
+			valid INTEGER,
 			rssi INTEGER,
 			uptime INTEGER,
 			FOREIGN KEY (device_id) REFERENCES devices(id)
@@ -58,84 +62,48 @@ def init_database_v2():
 		"""
 		)
 	connection.execute(
-		"""
-		CREATE INDEX IF NOT EXISTS idx_telemetry_device_timestamp ON telemetry (device_id, timestamp)
-		"""
+		"CREATE INDEX IF NOT EXISTS idx_telemetry_device_timestamp ON telemetry (device_id, timestamp)"
 		)
 	connection.commit()
 	connection.close()
 
-def migrate_to_v2():
-	old_devices = False
+def migrate_database():
+	init_database_v1()
 	connection = get_connection()
-	columns = connection.execute(
-		"""
-		PRAGMA table_info(devices)
-		"""
-		).fetchall()
-	for col in columns:
-		if col[1] == "online":
-			connection.execute(
-				"""
-				ALTER TABLE devices RENAME TO devices_old
-				"""
-				)
-			old_devices = True
-			break
-
-	init_database_v2()
-
-	if old_devices:
-		devices = connection.execute(
-			"""
-			SELECT * FROM devices_old
-			"""
-			).fetchall()
-		for id, device_name, firmware, first_seen, last_seen, online, rssi, uptime in devices:
-			connection.execute(
-				"""
-				INSERT INTO devices (id, device_name, firmware, first_seen) VALUES (?,?,?,?)
-				""", 
-				(id, device_name, firmware, first_seen)
-				)
-			connection.execute(
-				"""
-				INSERT INTO device_status (device_id, online, rssi, uptime, last_seen) VALUES (?, ?,?,?,?)
-				""", 
-				(id, online, rssi, uptime, last_seen)
-				)
+	row = connection.execute(
+		"SELECT version FROM schema_version"
+		).fetchone()
+	if row is None:
 		connection.execute(
-			"""
-			DROP TABLE devices_old
-			"""
+			"INSERT INTO schema_version (version) VALUES (?)",
+			(CURRENT_SCHEMA_VERSION,)
 			)
-		connection.execute(
-			"""
-			INSERT INTO schema_version (version) VALUES (?)
-			""",
-			(2,)
-			)
-
+	else:
+		# Future migration steps go here, e.g.:
+		# if row["version"] < 2:
+		#     connection.execute("ALTER TABLE ...")
+		#     connection.execute("UPDATE schema_version SET version = 2")
+		pass
 	connection.commit()
 	connection.close()
 
-def get_or_create_device(device_name, firmware):
+def get_or_create_device(hardware_id, device_name, firmware):
 	now = datetime.now(timezone.utc).isoformat()
 	connection = get_connection()
 	row = connection.execute(
 		"""
-		SELECT id FROM devices WHERE device_name = ?
+		SELECT id FROM devices WHERE hardware_id = ?
 		""",
-		(device_name,)
+		(hardware_id,)
 		).fetchone()
 	if row is None:
-		curser = connection.execute(
+		cursor = connection.execute(
 			"""
-			INSERT INTO devices (device_name, firmware, first_seen) VALUES (?,?,?)
+			INSERT INTO devices (hardware_id, device_name, firmware, first_seen) VALUES (?,?,?,?)
 			""",
-			(device_name, firmware, now)
+			(hardware_id, device_name, firmware, now)
 			)
-		device_id = curser.lastrowid
+		device_id = cursor.lastrowid
 		connection.execute(
 			"""
 			INSERT INTO device_status (device_id, online, rssi, uptime, last_seen) VALUES (?,?,?,?,?)
@@ -143,20 +111,20 @@ def get_or_create_device(device_name, firmware):
 			(device_id, 0, None, None, now)
 			)
 	else:
-		device_id = row[0]
+		device_id = row["id"]
 		connection.execute(
 			"""
-			UPDATE devices SET firmware = ? WHERE id = ?
+			UPDATE devices SET firmware = COALESCE(?, firmware), device_name=? WHERE id = ?
 			""",
-			(firmware, device_id)
+			(firmware, device_name, device_id)
 			)
 	connection.commit()
 	connection.close()
 	return device_id
 	
-def update_device_status(device_name, firmware, online, rssi, uptime):
+def update_device_status(hardware_id, device_name, firmware, online, rssi, uptime):
 	now = datetime.now(timezone.utc).isoformat()
-	device_id = get_or_create_device(device_name, firmware)
+	device_id = get_or_create_device(hardware_id, device_name, firmware)
 	connection = get_connection()
 	connection.execute(
 		"""
@@ -167,14 +135,14 @@ def update_device_status(device_name, firmware, online, rssi, uptime):
 	connection.commit()
 	connection.close()
 
-def save_telemetry(device_id, temperature, rssi, uptime):
+def save_telemetry(device_id, temperature, valid, rssi, uptime):
 	now = datetime.now(timezone.utc).isoformat()
 	connection = get_connection()
 	connection.execute(
 		"""
-		INSERT INTO telemetry (device_id, timestamp, temperature, rssi, uptime) VALUES (?,?,?,?,?)
+		INSERT INTO telemetry (device_id, timestamp, temperature, valid, rssi, uptime) VALUES (?,?,?,?,?,?)
 		""",
-		(device_id, now, temperature, rssi, uptime)
+		(device_id, now, temperature, valid, rssi, uptime)
 		)
 	connection.commit()
 	connection.close()

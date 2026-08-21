@@ -1,8 +1,10 @@
 #include "led_manager.h"
 #include "logger.h"
 #include "config_manager.h"
+#include "button_manager.h"
 #include "device_info.h"
 #include "system_info.h"
+#include "provision_manager.h"
 #include "sensor_manager.h"
 #include "wifi_manager.h"
 #include "mqtt_manager.h"
@@ -20,22 +22,35 @@ void app_main(void){
     // 3. configuration
     config_manager_init();
 
-    // 4. Static information
+    //4. General purpose button
+    button_manager_init();
+
+    // 5. Static information
     device_info_init();
 
-    // 5. System information
+    // 6. System information
     system_info_init();
 
-    // 6. Hardware
+    // 7. Hardware
     sensor_manager_init();
 
-    // 7. Network
-    wifi_manager_init();
+    if(config_manager_is_provisioned()){
 
-    // 8. Communication
-    mqtt_manager_init();
+        // 8. Network
+        wifi_manager_init();
 
-    // 9. Application tasks
-    app_manager_start();
+        // 9. Communication
+        mqtt_manager_init();
+
+        // 10. Application tasks
+        app_manager_start();
+
+    }
+    else{
+
+        // 8. provisioning
+        provision_manager_init();
+
+    }
 
 }

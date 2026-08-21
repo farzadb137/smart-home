@@ -27,11 +27,10 @@ def get_devices():
 			device_status.uptime,
 			(
 				SELECT temperature FROM telemetry WHERE telemetry.device_id = devices.id
-				ORDER BY telemetry.timestatmp DESC LIMIT 1
+				ORDER BY telemetry.timestamp DESC LIMIT 1
 			) AS temperature
 		FROM devices
 		JOIN device_status ON devices.id = device_status.device_id
-		GROUP BY devices.id
 		"""
 		).fetchall()
 
@@ -39,15 +38,15 @@ def get_devices():
 	devices = []
 	for row in rows:
 		devices.append({
-		"id": row[0],
-		"name": row[1],
-		"firmware": row[2],
-		"first_seen": row[3],
-		"last_seen": row[4],
-		"online": bool(row[5]),
-		"rssi": row[6],
-		"uptime": row[7],
-		"temperature": row[8]
+		"id": row["id"],
+		"name": row["device_name"],
+		"firmware": row["firmware"],
+		"first_seen": row["first_seen"],
+		"last_seen": row["last_seen"],
+		"online": bool(row["online"]),
+		"rssi": row["rssi"],
+		"uptime": row["uptime"],
+		"temperature": row["temperature"]
 		})
 	return jsonify(devices)
 
@@ -64,50 +63,60 @@ def get_device(device_name):
 			device_status.last_seen,
 			device_status.online,
 			device_status.rssi,
-			device_status.uptime
+			device_status.uptime,
+			(
+                SELECT temperature
+                FROM telemetry
+                WHERE telemetry.device_id = devices.id
+                ORDER BY telemetry.timestamp DESC
+                LIMIT 1
+            ) AS temperature
 		FROM devices
 		JOIN device_status ON devices.id = device_status.device_id
-		GROUP BY devices.id
-		"""
+		WHERE devices.device_name=?
+		""",
+		(device_name,)
 		).fetchone()
+	connection.close()
 	if row is None:
 		return jsonify({"error": "Device not found"}), 404
-	else:
-		return jsonify({
-			"id": row[0],
-			"name": row[1],
-			"firmware": row[2],
-			"first_seen": row[3],
-			"last_seen": row[4],
-			"online": bool(row[5]),
-			"rssi": row[6],
-			"uptime": row[7]
-			})
+	return jsonify({
+		"id": row["id"],
+		"name": row["device_name"],
+		"firmware": row["firmware"],
+		"first_seen": row["first_seen"],
+		"last_seen": row["last_seen"],
+		"online": bool(row["online"]),
+		"rssi": row["rssi"],
+		"uptime": row["uptime"],
+		"temperature": row["temperature"]
+		})
 
 @app.route("/api/devices/<device_name>/telemetry")
 def get_telemetry(device_name):
-	connection.get_connection()
+	connection = get_connection()
 	rows = connection.execute(
 		"""
 		SELECT 
-			telemetry.timestatmp,
+			telemetry.timestamp,
 			telemetry.temperature,
 			telemetry.rssi,
 			telemetry.uptime
 		FROM telemetry
 		JOIN devices ON devices.id = telemetry.device_id
 		WHERE devices.device_name=?
-		ORDER BY telemetry.timestatmp DESC LIMIT 100
+		ORDER BY telemetry.timestamp DESC LIMIT 100
 		""",
 		(device_name,)
 		).fetchall()
+	connection.close()
 	telemetry = []
 	for row in rows:
 		telemetry.append({
-			"timestamp": row[0],
-			"temperature": row[1],
-			"rssi": row[2],
-			"uptime": row[3],
+			"timestamp": row["timestamp"],
+			"temperature": row["temperature"],
+			"rssi": row["rssi"],
+			"uptime": row["uptime"],
 			})
 	return jsonify(telemetry)
 

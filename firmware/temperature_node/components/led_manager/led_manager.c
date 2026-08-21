@@ -59,6 +59,14 @@ static void led_task(void *arg){
                 blinking = !blinking;
                 vTaskDelay(pdMS_TO_TICKS(500));
                 break;
+            case LED_STATE_PROVISIONING:
+                if(blinking)
+                    led_manager_set_color(0, 255, 255);
+                else
+                    led_manager_off();
+                blinking = !blinking;
+                vTaskDelay(pdMS_TO_TICKS(500));
+                break;
             case LED_STATE_MQTT_CONNECTING:
                 if(blinking)
                     led_manager_set_color(255, 180, 0);
