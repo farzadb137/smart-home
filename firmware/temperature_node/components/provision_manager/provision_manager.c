@@ -34,6 +34,8 @@ static const char html_form[] =
     "<label>SSID:</label><input type='text' name='ssid' required>"
     "<label>WiFi Password:</label><input type='password' name='password' required>"
     "<label>MQTT Broker URI:</label><input type='text' name='mqtt' placeholder='mqtt://192.168.1.100\' required>"
+    "<label>MQTT Username:</label><input type='text' name='mqtt_user' placeholder='issued by add_device.sh' required>"
+    "<label>MQTT Password:</label><input type='text' name='mqtt_pass' placeholder='issued by add_device.sh' required>"
     "<button type='submit'>Save & Apply</button>"
     "</form></div></body></html>";
 
@@ -94,7 +96,7 @@ static esp_err_t provision_render(httpd_req_t *req){
 
 static esp_err_t provision_submit(httpd_req_t *req){
 
-    char content[256] = {0};
+    char content[768] = {0};
     char *token = NULL;
     char ssid_str[256];
     char ssid[32];
@@ -102,6 +104,10 @@ static esp_err_t provision_submit(httpd_req_t *req){
     char pass[64];
     char uri_str[256];
     char uri[128];
+    char mqtt_user_str[128];
+    char mqtt_user[32];
+    char mqtt_pass_str[128];
+    char mqtt_pass[48];
 
     size_t recv_size = MIN(req->content_len, sizeof(content) - 1);
     int ret = httpd_req_recv(req, content, recv_size);
@@ -113,6 +119,8 @@ static esp_err_t provision_submit(httpd_req_t *req){
 
     LOG_INFO(TAG, "Form Submission Payload: %s", content);
 
+    /* NOTE: parsing here is positional and MUST match the field order declared
+     * in html_form exactly: ssid, password, mqtt, mqtt_user, mqtt_pass. */
     token = strtok(content, "&");
     if(token != NULL)
         snprintf(ssid_str, sizeof(ssid_str), "%s", token);
@@ -122,6 +130,12 @@ static esp_err_t provision_submit(httpd_req_t *req){
     token = strtok(NULL, "&");
     if(token != NULL)
         snprintf(uri_str, sizeof(uri_str), "%s", token);
+    token = strtok(NULL, "&");
+    if(token != NULL)
+        snprintf(mqtt_user_str, sizeof(mqtt_user_str), "%s", token);
+    token = strtok(NULL, "&");
+    if(token != NULL)
+        snprintf(mqtt_pass_str, sizeof(mqtt_pass_str), "%s", token);
 
     token = strtok(ssid_str, "=");
     token = strtok(NULL, "=");
@@ -138,11 +152,24 @@ static esp_err_t provision_submit(httpd_req_t *req){
     if(token != NULL)
         snprintf(uri, sizeof(uri), "%s", token);
 
+    token = strtok(mqtt_user_str, "=");
+    token = strtok(NULL, "=");
+    if(token != NULL)
+        snprintf(mqtt_user, sizeof(mqtt_user), "%s", token);
+
+    token = strtok(mqtt_pass_str, "=");
+    token = strtok(NULL, "=");
+    if(token != NULL)
+        snprintf(mqtt_pass, sizeof(mqtt_pass), "%s", token);
+
     url_decode(ssid);
     url_decode(pass);
     url_decode(uri);
+    url_decode(mqtt_user);
+    url_decode(mqtt_pass);
 
     config_manager_update_mqtt_uri(uri);
+    config_manager_update_mqtt_credentials(mqtt_user, mqtt_pass);
     config_manager_update_wifi_credentials(ssid, pass);
     config_manager_mark_provisioned();
 
@@ -292,4 +319,3 @@ esp_err_t provision_manager_init(void){
 
     return ESP_OK;
 }
-
