@@ -8,7 +8,7 @@ async function apiRequest(endpoint) {
 }
 
 export async function getHealth() {
-	return apiRequest("/health")
+	return apiRequest("/health");
 }
 
 export async function getDevices() {
