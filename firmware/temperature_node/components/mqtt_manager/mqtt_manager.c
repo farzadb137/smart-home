@@ -9,6 +9,7 @@
 #include "mqtt_client.h"
 
 #include <stdbool.h>
+#include <string.h>
 
 
 static const char *TAG = "MQTT";
@@ -84,8 +85,15 @@ esp_err_t mqtt_manager_init(void){
 
     LOG_INFO(TAG, "MQTT URI: %s", config->mqtt_uri);
 
+    if((strlen(config->mqtt_username) == 0) || (strlen(config->mqtt_password) == 0)){
+        LOG_ERROR(TAG, "MQTT credentials missing - device was not provisioned with a username/password. Refusing to start (broker requires auth).");
+        return ESP_ERR_INVALID_STATE;
+    }
+
     esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = config->mqtt_uri,
+        .credentials.username = config->mqtt_username,
+        .credentials.authentication.password = config->mqtt_password,
         .session.last_will.topic = topic_manager_get_status(),
         .session.last_will.msg = "{\"online\":false}",
         .session.last_will.msg_len = 16,

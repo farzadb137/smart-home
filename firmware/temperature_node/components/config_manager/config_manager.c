@@ -6,7 +6,7 @@
 #include "nvs.h"
 #include <string.h>
 
-#define APP_CONFIG_VERSION  2
+#define APP_CONFIG_VERSION  3
 #define APP_CONFIG_MAGIC UINT32_C(0x3D593E4B)
 
 typedef struct{
@@ -180,6 +180,34 @@ esp_err_t config_manager_update_wifi_credentials(const char *ssid, const char *p
     if(err != ESP_OK){
         memcpy(config_storage.config.wifi_ssid, old_ssid, sizeof(old_ssid));
         memcpy(config_storage.config.wifi_password, old_password, sizeof(old_password));
+    }
+
+    return err;
+}
+
+esp_err_t config_manager_update_mqtt_credentials(const char *username, const char *password){
+
+    if((username == NULL) || (password == NULL))
+        return ESP_ERR_INVALID_ARG;
+
+    char old_username[sizeof(config_storage.config.mqtt_username)];
+    strncpy(old_username, config_storage.config.mqtt_username, sizeof(old_username) - 1);
+    old_username[sizeof(old_username) - 1] = '\0';
+
+    char old_password[sizeof(config_storage.config.mqtt_password)];
+    strncpy(old_password, config_storage.config.mqtt_password, sizeof(old_password) - 1);
+    old_password[sizeof(old_password) - 1] = '\0';
+
+    strncpy(config_storage.config.mqtt_username, username, sizeof(config_storage.config.mqtt_username) - 1);
+    config_storage.config.mqtt_username[sizeof(config_storage.config.mqtt_username) - 1] = '\0';
+
+    strncpy(config_storage.config.mqtt_password, password, sizeof(config_storage.config.mqtt_password) - 1);
+    config_storage.config.mqtt_password[sizeof(config_storage.config.mqtt_password) - 1] = '\0';
+
+    esp_err_t err = config_manager_save();
+    if(err != ESP_OK){
+        memcpy(config_storage.config.mqtt_username, old_username, sizeof(old_username));
+        memcpy(config_storage.config.mqtt_password, old_password, sizeof(old_password));
     }
 
     return err;

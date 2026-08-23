@@ -2,7 +2,7 @@ import json
 import paho.mqtt.client as mqtt
 import threading
 import time
-from config import(BROKER_HOST,BROKER_PORT,TELEMETRY_TOPIC,STATUS_TOPIC)
+from config import(BROKER_HOST,BROKER_PORT,BROKER_USERNAME,BROKER_PASSWORD,TELEMETRY_TOPIC,STATUS_TOPIC)
 from database import(migrate_database,get_or_create_device,save_telemetry,update_device_status,mark_offline_devices)
 
 def offline_monitor():
@@ -75,6 +75,7 @@ def on_message(client, userdata, message):
 migrate_database()
 threading.Thread(target=offline_monitor,daemon=True).start()
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+client.username_pw_set(BROKER_USERNAME, BROKER_PASSWORD)
 client.on_connect = on_connect
 client.on_message = on_message
 print("[MQTT] Connecting to broker...")
