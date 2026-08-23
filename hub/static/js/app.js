@@ -1,59 +1,42 @@
 import { getHealth, getDevices } from "./api.js";
 import { appState } from "./state.js";
+import { renderClimate } from "./components/climate.js";
+import { renderDevices } from "./components/devices.js";
 
 const REFRESH_INTERVAL = 30000;
 
+const CLIMATE_DEVICE = "TEMP-DEFAULT-0001";
+
 function getClimateDevice() {
     return appState.devices.find(
-        device => device.temperature !== null
+        device => device.name === CLIMATE_DEVICE
     );
 }
 
-function renderClimate(data) {
-    const temperatureValue = document.querySelector(".temperature-value");
-    const temperatureDetail = document.querySelector(".temperature-detail");
-    const statusText = document.querySelector(".status-text");
-    const statusDot = document.querySelector(".status-badge .status-dot");
-
-    if (!temperatureValue || !temperatureDetail || !statusText || !statusDot) {
-        console.error("Climate elements not found in DOM.");
+function updateDashboard() {
+    if (!appState.apiOnline) {
+        renderClimate({
+            state: "api-offline"
+        });
+        renderDevices([]);
         return;
     }
 
-    if (data.temperature === null || Number.isNaN(data.temperature)) {
-        temperatureValue.textContent = "--";
-        temperatureDetail.textContent = "-- °C";
-    } else {
-        temperatureValue.textContent = data.temperature.toFixed(1);
-        temperatureDetail.textContent =
-            `${data.temperature.toFixed(1)} °C`;
-    }
-
-    if (data.online) {
-        statusText.textContent = "Online";
-        statusDot.style.backgroundColor = "var(--color-success)";
-    } else {
-        statusText.textContent = "Offline";
-        statusDot.style.backgroundColor = "var(--color-danger)";
-    }
-}
-
-function updateDashboard() {
     const climateDevice = getClimateDevice();
 
     if (!climateDevice) {
-        console.warn("No climate device found.");
+        renderClimate({
+            state: "device-not-found"
+        });
         return;
     }
 
     renderClimate({
-        temperature:
-            climateDevice.temperature !== null
-                ? Number(climateDevice.temperature)
-                : null,
-
-        online: Boolean(climateDevice.online)
+        state: "normal",
+        temperature: climateDevice.temperature,
+        online: climateDevice.online
     });
+    renderDevices(appState.devices);
 }
 
 async function loadDashboardData() {
@@ -71,6 +54,8 @@ async function loadDashboardData() {
         console.error("Failed to load dashboard data:", error);
 
         appState.apiOnline = false;
+
+        updateDashboard();
     }
 }
 
