@@ -26,6 +26,7 @@ void telemetry_manager_get(telemetry_t *data){
     if(device_info){
         data->device_id = device_info->id;
         strncpy(data->device_name, device_info->name, sizeof(data->device_name) - 1);
+        strncpy(data->device_type, device_type_to_string(device_info->type), sizeof(data->device_type) - 1);
         strncpy(data->firmware, device_info->firmware, sizeof(data->firmware) - 1);
     }
 
@@ -60,6 +61,7 @@ char *telemetry_manager_to_json(const telemetry_t *telemetry){
 
     cJSON_AddNumberToObject(device, "id", telemetry->device_id);
     cJSON_AddStringToObject(device, "name", telemetry->device_name);
+    cJSON_AddStringToObject(device, "type", telemetry->device_type);
     cJSON_AddStringToObject(device, "firmware", telemetry->firmware);
 
     cJSON_AddNumberToObject(system, "uptime", telemetry->uptime);

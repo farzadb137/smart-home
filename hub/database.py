@@ -19,7 +19,7 @@ def init_database_v1():
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			hardware_id INTEGER NOT NULL UNIQUE,
 			device_name TEXT NOT NULL,
-			device_type TEXT NOT NULL DEFAULT 'temperature_sensor',
+			device_type TEXT NOT NULL DEFAULT 'unknown',
 			manufacturer TEXT,
 			model TEXT,
 			hardware TEXT,
@@ -87,7 +87,7 @@ def migrate_database():
 	connection.commit()
 	connection.close()
 
-def get_or_create_device(hardware_id, device_name, firmware):
+def get_or_create_device(hardware_id, device_name, device_type, firmware):
 	now = datetime.now(timezone.utc).isoformat()
 	connection = get_connection()
 	row = connection.execute(
@@ -97,11 +97,12 @@ def get_or_create_device(hardware_id, device_name, firmware):
 		(hardware_id,)
 		).fetchone()
 	if row is None:
+		device_type_value = device_type if device_type else "unknown"
 		cursor = connection.execute(
 			"""
-			INSERT INTO devices (hardware_id, device_name, firmware, first_seen) VALUES (?,?,?,?)
+			INSERT INTO devices (hardware_id, device_name, device_type, firmware, first_seen) VALUES (?,?,?,?,?)
 			""",
-			(hardware_id, device_name, firmware, now)
+			(hardware_id, device_name, device_type_value, firmware, now)
 			)
 		device_id = cursor.lastrowid
 		connection.execute(
@@ -114,9 +115,9 @@ def get_or_create_device(hardware_id, device_name, firmware):
 		device_id = row["id"]
 		connection.execute(
 			"""
-			UPDATE devices SET firmware = COALESCE(?, firmware), device_name=? WHERE id = ?
+			UPDATE devices SET firmware = COALESCE(?, firmware), device_name=?, device_type = COALESCE(?, device_type) WHERE id = ?
 			""",
-			(firmware, device_name, device_id)
+			(firmware, device_name, device_type, device_id)
 			)
 	connection.commit()
 	connection.close()
@@ -124,7 +125,7 @@ def get_or_create_device(hardware_id, device_name, firmware):
 	
 def update_device_status(hardware_id, device_name, firmware, online, rssi, uptime):
 	now = datetime.now(timezone.utc).isoformat()
-	device_id = get_or_create_device(hardware_id, device_name, firmware)
+	device_id = get_or_create_device(hardware_id, device_name, None, firmware)
 	connection = get_connection()
 	connection.execute(
 		"""

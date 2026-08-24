@@ -5,7 +5,7 @@ import { renderDevices } from "./components/devices.js";
 
 const REFRESH_INTERVAL = 30000;
 
-const CLIMATE_DEVICE = "TEMP-DEFAULT-0001";
+const CLIMATE_DEVICE = "TEMP-DEFAULT-0002";
 
 function getClimateDevice() {
     return appState.devices.find(

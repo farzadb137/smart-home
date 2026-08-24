@@ -5,6 +5,7 @@
 #include "status_manager.h"
 #include "mqtt_manager.h"
 #include "topic_manager.h"
+#include "config_manager.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -43,7 +44,8 @@ static void telemetry_task(void *args){
 
         }
 
-        vTaskDelay(pdMS_TO_TICKS(10000));
+        const app_config_t *config = config_manager_get();
+        vTaskDelay(pdMS_TO_TICKS(config->telemetry_interval_sec * 1000));
 
     }
 }

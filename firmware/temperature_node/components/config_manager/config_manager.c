@@ -6,8 +6,11 @@
 #include "nvs.h"
 #include <string.h>
 
-#define APP_CONFIG_VERSION  3
+#define APP_CONFIG_VERSION  1
 #define APP_CONFIG_MAGIC UINT32_C(0x3D593E4B)
+
+#define TELEMETRY_INTERVAL_MIN_SEC   5
+#define TELEMETRY_INTERVAL_MAX_SEC   3600
 
 typedef struct{
     uint32_t magic;
@@ -43,7 +46,9 @@ static void config_set_defaults(void){
     config_storage.magic = APP_CONFIG_MAGIC;
     config_storage.version = APP_CONFIG_VERSION;
 
-    strcpy(config_storage.config.device_name, "TEMP-DEFAULT-0001");
+    strcpy(config_storage.config.device_name, "TEMP-DEFAULT-0002");
+
+    config_storage.config.telemetry_interval_sec = 10;
 
 }
 
@@ -210,6 +215,22 @@ esp_err_t config_manager_update_mqtt_credentials(const char *username, const cha
         memcpy(config_storage.config.mqtt_password, old_password, sizeof(old_password));
     }
 
+    return err;
+}
+
+esp_err_t config_manager_update_telemetry_interval(uint32_t interval_sec){
+ 
+    if((interval_sec < TELEMETRY_INTERVAL_MIN_SEC) || (interval_sec > TELEMETRY_INTERVAL_MAX_SEC))
+        return ESP_ERR_INVALID_ARG;
+ 
+    uint32_t old_interval = config_storage.config.telemetry_interval_sec;
+ 
+    config_storage.config.telemetry_interval_sec = interval_sec;
+ 
+    esp_err_t err = config_manager_save();
+    if(err != ESP_OK)
+        config_storage.config.telemetry_interval_sec = old_interval;
+ 
     return err;
 }
 

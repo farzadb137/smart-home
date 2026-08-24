@@ -18,7 +18,12 @@ def get_devices():
 		"""
 		SELECT 
 			devices.id,
+			devices.hardware_id,
 			devices.device_name,
+			devices.device_type,
+			devices.manufacturer,
+			devices.model,
+			devices.hardware,
 			devices.firmware,
 			devices.first_seen,
 			device_status.last_seen,
@@ -39,7 +44,12 @@ def get_devices():
 	for row in rows:
 		devices.append({
 		"id": row["id"],
+		"hardware_id": row["hardware_id"],
 		"name": row["device_name"],
+		"type": row["device_type"],
+		"manufacturer": row["manufacturer"],
+		"model": row["model"],
+		"hardware": row["hardware"],
 		"firmware": row["firmware"],
 		"first_seen": row["first_seen"],
 		"last_seen": row["last_seen"],
@@ -57,7 +67,12 @@ def get_device(device_name):
 		"""
 		SELECT 
 			devices.id,
+			devices.hardware_id,
 			devices.device_name,
+			devices.device_type,
+			devices.manufacturer,
+			devices.model,
+			devices.hardware,
 			devices.firmware,
 			devices.first_seen,
 			device_status.last_seen,
@@ -82,7 +97,12 @@ def get_device(device_name):
 		return jsonify({"error": "Device not found"}), 404
 	return jsonify({
 		"id": row["id"],
+		"hardware_id": row["hardware_id"],
 		"name": row["device_name"],
+		"type": row["device_type"],
+		"manufacturer": row["manufacturer"],
+		"model": row["model"],
+		"hardware": row["hardware"],
 		"firmware": row["firmware"],
 		"first_seen": row["first_seen"],
 		"last_seen": row["last_seen"],
