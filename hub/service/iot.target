@@ -1,0 +1,9 @@
+[Unit]
+Description=Smart Home Platform (mosquitto + collector + API)
+# mosquitto itself isn't WantedBy=iot.target (it's a system package
+# unit we don't own), so it's pulled in explicitly here instead.
+Wants=mosquitto.service iot-collector.service iot-api.service
+After=mosquitto.service iot-collector.service iot-api.service
+
+[Install]
+WantedBy=multi-user.target
