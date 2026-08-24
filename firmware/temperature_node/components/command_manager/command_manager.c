@@ -30,7 +30,6 @@ static void handle_get_status(cJSON *root);
 static void handle_get_telemetry(cJSON *root);
 static void handle_set_config(cJSON *root);
 static void handle_restart(cJSON *root);
-static void handle_factory_reset(cJSON *root);
 
 
 static const command_entry_t command_table[] = {
@@ -39,7 +38,6 @@ static const command_entry_t command_table[] = {
     { "get_telemetry",  handle_get_telemetry    },
     { "set_config",     handle_set_config       },
     { "restart",        handle_restart          },
-    { "factory_reset",  handle_factory_reset    },
 };
 
 #define COMMAND_COUNT (sizeof(command_table) / sizeof(command_table[0]))
@@ -67,6 +65,7 @@ static const command_entry_t command_table[] = {
     cJSON_AddBoolToObject(response, "success", true);
     cJSON *data = cJSON_AddObjectToObject(response, "data");
     cJSON_AddStringToObject(data, "device_name", config->device_name);
+    cJSON_AddNumberToObject(data, "telemetry_interval_sec", config->telemetry_interval_sec);
 
     send_response(response);
 
@@ -125,26 +124,29 @@ static void handle_get_telemetry(cJSON *root){
 static void handle_set_config(cJSON *root){
 
     bool device_name_updated = false;
-    bool mqtt_uri_updated = false;
+    bool telemetry_interval_updated = false;
 
     cJSON *data = cJSON_GetObjectItem(root, "data");
 
     cJSON *name = cJSON_GetObjectItem(data, "device_name");
-    cJSON *mqtt_uri = cJSON_GetObjectItem(data, "mqtt_uri");
+    cJSON *telemetry_interval = cJSON_GetObjectItem(data, "telemetry_interval_sec");
 
     if(name && cJSON_IsString(name))
         if(config_manager_update_device_name(name->valuestring) == ESP_OK)
             device_name_updated = true;
 
-    if(mqtt_uri && cJSON_IsString(mqtt_uri))
-        if(config_manager_update_mqtt_uri(mqtt_uri->valuestring) == ESP_OK)
-            mqtt_uri_updated = true;
+    if(telemetry_interval && cJSON_IsNumber(telemetry_interval))
+        if(config_manager_update_telemetry_interval((uint32_t)telemetry_interval->valuedouble) == ESP_OK)
+            telemetry_interval_updated = true;
+
+    const app_config_t *config = config_manager_get();
 
     cJSON *response = cJSON_CreateObject();
     cJSON_AddBoolToObject(response, "success", true);
     cJSON *response_data = cJSON_AddObjectToObject(response, "data");
     cJSON_AddBoolToObject(response_data, "device_name", device_name_updated);
-    cJSON_AddBoolToObject(response_data, "mqtt_uri", mqtt_uri_updated);
+    cJSON_AddBoolToObject(response_data, "telemetry_interval_sec", telemetry_interval_updated);
+    cJSON_AddNumberToObject(response_data, "current_telemetry_interval_sec", config->telemetry_interval_sec);
 
     send_response(response);
 
@@ -168,31 +170,6 @@ static void handle_restart(cJSON *root){
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     esp_restart();
-
-}
-
-static void handle_factory_reset(cJSON *root){
-
-    bool factory_reset_done = false;
-
-    if(config_manager_factory_reset() == ESP_OK)
-        factory_reset_done = true;
-
-    cJSON *response = cJSON_CreateObject();
-
-    cJSON_AddBoolToObject(response, "success", factory_reset_done);
-
-    cJSON *data = cJSON_AddObjectToObject(response, "data");
-    cJSON_AddStringToObject(data, "message", factory_reset_done?"Factory reset, restarting":"NVS failed");
-
-    send_response(response);
-
-    cJSON_Delete(response);
-
-    if(factory_reset_done){
-        vTaskDelay(pdMS_TO_TICKS(1000));
-        esp_restart();
-    }
 
 }
 

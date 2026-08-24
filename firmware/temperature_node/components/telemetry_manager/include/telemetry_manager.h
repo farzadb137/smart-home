@@ -8,6 +8,7 @@
 typedef struct{
     uint64_t device_id;
     char device_name[32];
+    char device_type[32];
     char firmware[16];
     float temperature;
     bool sensor_valid;

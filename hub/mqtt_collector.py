@@ -40,6 +40,7 @@ def handle_telemetry(message):
 	sensor = payload.get("sensor", {})
 	hardware_id = device.get("id")
 	device_name = device.get("name")
+	device_type = device.get("type");
 	firmware = device.get("firmware")
 	rssi = system.get("rssi")
 	uptime = system.get("uptime")
@@ -51,7 +52,7 @@ def handle_telemetry(message):
 	print(f"RSSI:        {rssi} dBm")
 	print(f"Uptime:      {uptime} s")
 	try:
-		device_id = get_or_create_device(hardware_id, device_name, firmware)
+		device_id = get_or_create_device(hardware_id, device_name, device_type, firmware)
 		save_telemetry(device_id, temperature, valid, rssi, uptime)
 		print(f"[DB] Telemetry saved(device_id={device_id})")
 	except Exception as error:
