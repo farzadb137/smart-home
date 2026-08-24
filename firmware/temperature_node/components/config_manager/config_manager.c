@@ -6,7 +6,7 @@
 #include "nvs.h"
 #include <string.h>
 
-#define APP_CONFIG_VERSION  1
+#define APP_CONFIG_VERSION  2
 #define APP_CONFIG_MAGIC UINT32_C(0x3D593E4B)
 
 #define TELEMETRY_INTERVAL_MIN_SEC   5
@@ -46,7 +46,7 @@ static void config_set_defaults(void){
     config_storage.magic = APP_CONFIG_MAGIC;
     config_storage.version = APP_CONFIG_VERSION;
 
-    strcpy(config_storage.config.device_name, "TEMP-DEFAULT-0002");
+    strcpy(config_storage.config.device_name, "TEMP-DEFAULT-0003");
 
     config_storage.config.telemetry_interval_sec = 10;
 
@@ -230,6 +230,25 @@ esp_err_t config_manager_update_telemetry_interval(uint32_t interval_sec){
     esp_err_t err = config_manager_save();
     if(err != ESP_OK)
         config_storage.config.telemetry_interval_sec = old_interval;
+ 
+    return err;
+}
+
+esp_err_t config_manager_update_ap_password(const char *password){
+ 
+    if(password == NULL)
+        return ESP_ERR_INVALID_ARG;
+ 
+    char old_password[sizeof(config_storage.config.ap_password)];
+    strncpy(old_password, config_storage.config.ap_password, sizeof(old_password) - 1);
+    old_password[sizeof(old_password) - 1] = '\0';
+ 
+    strncpy(config_storage.config.ap_password, password, sizeof(config_storage.config.ap_password) - 1);
+    config_storage.config.ap_password[sizeof(config_storage.config.ap_password) - 1] = '\0';
+ 
+    esp_err_t err = config_manager_save();
+    if(err != ESP_OK)
+        memcpy(config_storage.config.ap_password, old_password, sizeof(old_password));
  
     return err;
 }

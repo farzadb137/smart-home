@@ -18,6 +18,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#define AP_PASSWORD_LENGTH      10
+
 static const char *TAG = "PROVISION";
 
 static httpd_handle_t server = NULL;
@@ -38,6 +40,24 @@ static const char html_form[] =
     "<label>MQTT Password:</label><input type='text' name='mqtt_pass' placeholder='issued by add_device.sh' required>"
     "<button type='submit'>Save & Apply</button>"
     "</form></div></body></html>";
+
+/* Charset excludes 0/O and 1/l/I - this password gets read off a serial
+ * monitor and typed on a phone keyboard, so visual ambiguity is a real
+ * usability problem, not just a nitpick. 32 chars * 10 length ~= 50 bits
+ * of entropy, plenty for a short-lived provisioning-window secret. */
+static const char ap_password_charset[] = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+ 
+static void generate_ap_password(char *out, size_t out_size){
+ 
+    size_t charset_len = strlen(ap_password_charset);
+    size_t length = (out_size - 1 < AP_PASSWORD_LENGTH) ? (out_size - 1) : AP_PASSWORD_LENGTH;
+ 
+    for(size_t i = 0;i < length;i++)
+        out[i] = ap_password_charset[esp_random() % charset_len];
+ 
+    out[length] = '\0';
+ 
+}
 
 static int hex_digit_value(char c){
     if((c >= '0') && (c <= '9'))
@@ -209,12 +229,34 @@ static esp_err_t provision_manager_start_ap(void){
     uint8_t wifi_ssid[32];
     snprintf((char *)wifi_ssid, sizeof(wifi_ssid), "SmartTemp-Setup-%d", (uint16_t)info->id);
 
+    /* Generate the AP password once per unprovisioned lifetime and persist it,
+     * so it doesn't change if the device reboots mid-setup. A factory reset
+     * (config_set_defaults) clears it back to empty, so the next unprovisioned
+     * boot gets a fresh one - this is intentional, not a bug. */
+    const app_config_t *config = config_manager_get();
+    char ap_password[sizeof(config->ap_password)];
+
+    if(strlen(config->ap_password) == 0){
+        generate_ap_password(ap_password, sizeof(ap_password));
+        config_manager_update_ap_password(ap_password);
+    }
+    else{
+        strncpy(ap_password, config->ap_password, sizeof(ap_password) - 1);
+        ap_password[sizeof(ap_password) - 1] = '\0';
+    }
+
+    LOG_INFO(TAG, "=====================================================");
+    LOG_INFO(TAG, " Setup network : %s", wifi_ssid);
+    LOG_INFO(TAG, " Setup password: %s", ap_password);
+    LOG_INFO(TAG, "=====================================================");
+
     wifi_config_t wifi_config = {0};
     wifi_config.ap.channel = 1;
-    wifi_config.ap.authmode = WIFI_AUTH_OPEN;
+    wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
     wifi_config.ap.max_connection = 4;
     wifi_config.ap.ssid_len = strlen((char*)wifi_ssid);
     strncpy((char *)wifi_config.ap.ssid, (char *)wifi_ssid, sizeof(wifi_config.ap.ssid) - 1);
+    strncpy((char *)wifi_config.ap.password, ap_password, sizeof(wifi_config.ap.password) - 1);
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
