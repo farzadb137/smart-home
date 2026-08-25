@@ -16,6 +16,7 @@
 #include "sys/param.h"
 
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 
 #define AP_PASSWORD_LENGTH      10
@@ -188,6 +189,26 @@ static esp_err_t provision_submit(httpd_req_t *req){
     url_decode(mqtt_user);
     url_decode(mqtt_pass);
 
+    char expected_id_hex[DEVICE_ID_HEX_LEN];
+    device_info_get_id_hex(expected_id_hex, sizeof(expected_id_hex));
+
+    if(strcasecmp(mqtt_user, expected_id_hex) != 0){
+
+        LOG_ERROR(TAG, "MQTT username '%s' does not match this device's ID '%s' - rejecting submission", mqtt_user, expected_id_hex);
+
+        char error_resp[256];
+        snprintf(error_resp, sizeof(error_resp),
+            "<html><body><h2>Setup Failed</h2>"
+            "<p>MQTT Username must be exactly: <b>%s</b></p>"
+            "<p>This is shown in the WiFi network name you just joined (SmartTemp-Setup-%s).</p>"
+            "<p><a href='/'>Go back and try again</a></p></body></html>",
+            expected_id_hex, expected_id_hex);
+
+        httpd_resp_send(req, error_resp, HTTPD_RESP_USE_STRLEN);
+
+        return ESP_OK;
+    }
+
     config_manager_update_mqtt_uri(uri);
     config_manager_update_mqtt_credentials(mqtt_user, mqtt_pass);
     config_manager_update_wifi_credentials(ssid, pass);
@@ -223,11 +244,12 @@ static esp_err_t provision_manager_start_ap(void){
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     LOG_INFO(TAG, "WiFi initialized");
-    
-    const device_info_t *info = device_info_get();
+
+    char id_hex[DEVICE_ID_HEX_LEN];
+    device_info_get_id_hex(id_hex, sizeof(id_hex));
 
     uint8_t wifi_ssid[32];
-    snprintf((char *)wifi_ssid, sizeof(wifi_ssid), "SmartTemp-Setup-%d", (uint16_t)info->id);
+    snprintf((char *)wifi_ssid, sizeof(wifi_ssid), "SmartTemp-Setup-%s", id_hex);
 
     /* Generate the AP password once per unprovisioned lifetime and persist it,
      * so it doesn't change if the device reboots mid-setup. A factory reset

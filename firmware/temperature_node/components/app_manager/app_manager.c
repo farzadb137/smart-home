@@ -6,6 +6,7 @@
 #include "mqtt_manager.h"
 #include "topic_manager.h"
 #include "config_manager.h"
+#include "telemetry_buffer.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -22,25 +23,41 @@ static void telemetry_task(void *args){
 
     LOG_INFO(TAG, "Telemetry task started");
 
-    telemetry_t telemetry;
+    telemetry_buffer_init();
 
     while(1){
 
+        telemetry_t telemetry;
         telemetry_manager_get(&telemetry);
 
-        char *json = telemetry_manager_to_json(&telemetry);
-        if(json != NULL){
+        if(!telemetry_buffer_push(&telemetry))
+            LOG_WARN(TAG, "Telemetry buffer full - oldest buffered reading was dropped to make room");
 
-            if(mqtt_manager_is_connected()){
+        /* Drain as much of the buffer as we can while connected.
+         * peek (don't remove) -> publish -> only pop on confirmed success,
+         * so a disconnect mid-flush leaves the unsent reading in place
+         * for the next cycle instead of losing it. */
+        while(mqtt_manager_is_connected()){
 
-                LOG_INFO(TAG, "Publishing telemetry:\n%s", json);
-                esp_err_t ret = mqtt_manager_publish(topic_manager_get_telemetry(), json, 1, false);
-                if(ret != ESP_OK)
-                    LOG_WARN(TAG, "Telemetry publish failed");
+            telemetry_t buffered;
+            if(!telemetry_buffer_peek(&buffered))
+                break;
 
-            }
+            char *json = telemetry_manager_to_json(&buffered);
+            if(json == NULL)
+                break;
+
+            LOG_INFO(TAG, "Publishing telemetry:\n%s", json);
+            esp_err_t ret = mqtt_manager_publish(topic_manager_get_telemetry(), json, 1, false);
 
             cJSON_free(json);
+
+            if(ret != ESP_OK){
+                LOG_WARN(TAG, "Telemetry publish failed mid-flush, will retry next cycle");
+                break;
+            }
+
+            telemetry_buffer_pop();
 
         }
 

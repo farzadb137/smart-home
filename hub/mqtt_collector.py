@@ -3,7 +3,7 @@ import paho.mqtt.client as mqtt
 import threading
 import time
 from config import(BROKER_HOST,BROKER_PORT,BROKER_USERNAME,BROKER_PASSWORD,TELEMETRY_TOPIC,STATUS_TOPIC)
-from database import(migrate_database,get_or_create_device,save_telemetry,update_device_status,mark_offline_devices)
+from database import(migrate_database,get_or_create_device,save_reading,update_device_status,mark_offline_devices)
 
 def offline_monitor():
     while True:
@@ -37,26 +37,31 @@ def handle_telemetry(message):
 		return
 	device = payload.get("device", {})
 	system = payload.get("system", {})
-	sensor = payload.get("sensor", {})
+	capabilities = payload.get("capabilities", {})
 	hardware_id = device.get("id")
 	device_name = device.get("name")
-	device_type = device.get("type");
+	device_type = device.get("type")
 	firmware = device.get("firmware")
 	rssi = system.get("rssi")
 	uptime = system.get("uptime")
-	temperature = sensor.get("temperature")
-	valid = sensor.get("valid")
-	print(f"Device:      {device_name}")
-	print(f"Firmware:    {firmware}")
-	print(f"Temperature: {temperature} °C")
-	print(f"RSSI:        {rssi} dBm")
-	print(f"Uptime:      {uptime} s")
+	time_valid = system.get("time_valid", False)
+	device_timestamp = system.get("timestamp") if time_valid else None
+
+	print(f"Device:       {device_name}")
+	print(f"Firmware:     {firmware}")
+	print(f"Capabilities: {list(capabilities.keys())}")
+	print(f"RSSI:         {rssi} dBm")
+	print(f"Uptime:       {uptime} s")
+	if not time_valid:
+		print("[WARN] Device has not synced time yet - recording collector-side timestamp instead")
+
 	try:
 		device_id = get_or_create_device(hardware_id, device_name, device_type, firmware)
-		save_telemetry(device_id, temperature, valid, rssi, uptime)
-		print(f"[DB] Telemetry saved(device_id={device_id})")
+		for capability_name, reading in capabilities.items():
+			save_reading(device_id, capability_name, reading.get("value"), reading.get("valid"), rssi, uptime, device_timestamp)
+		print(f"[DB] Reading(s) saved(device_id={device_id})")
 	except Exception as error:
-		print(f"[DB] Failed to save telemetry: {error}")
+		print(f"[DB] Failed to save reading: {error}")
 
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"[MQTT] Connected: {reason_code}")

@@ -7,3 +7,5 @@ TELEMETRY_TOPIC = "home/devices/+/telemetry"
 STATUS_TOPIC = "home/devices/+/status"
 
 DATABASE_PATH = "telemetry.db"
+
+RAW_TELEMETRY_RETENTION_DAYS = 90

@@ -10,6 +10,7 @@ idf_component_register(SRCS "main.c"
                         provision_manager
                         sensor_manager
                         wifi_manager
+                        time_manager
                         mqtt_manager
                         app_manager
 )
