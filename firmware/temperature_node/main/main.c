@@ -7,6 +7,7 @@
 #include "provision_manager.h"
 #include "sensor_manager.h"
 #include "wifi_manager.h"
+#include "time_manager.h"
 #include "mqtt_manager.h"
 #include "app_manager.h"
 
@@ -38,6 +39,9 @@ void app_main(void){
 
         // 8. Network
         wifi_manager_init();
+
+        // 8b. Time sync (non-blocking - syncs in the background once connected)
+        time_manager_init();
 
         // 9. Communication
         mqtt_manager_init();

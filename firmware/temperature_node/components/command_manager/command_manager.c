@@ -103,7 +103,7 @@ static void handle_get_telemetry(cJSON *root){
 
     cJSON *device = cJSON_AddObjectToObject(data, "device");
     cJSON *system = cJSON_AddObjectToObject(data, "system");
-    cJSON *sensor = cJSON_AddObjectToObject(data, "sensor");
+    cJSON *capabilities = cJSON_AddObjectToObject(data, "capabilities");
 
     cJSON_AddNumberToObject(device, "id", telemetry.device_id);
     cJSON_AddStringToObject(device, "name", telemetry.device_name);
@@ -112,8 +112,9 @@ static void handle_get_telemetry(cJSON *root){
     cJSON_AddNumberToObject(system, "uptime", telemetry.uptime);
     cJSON_AddNumberToObject(system, "rssi", telemetry.rssi);
 
-    cJSON_AddNumberToObject(sensor, "temperature", telemetry.temperature);
-    cJSON_AddBoolToObject(sensor, "valid", telemetry.sensor_valid);
+    cJSON *capability = cJSON_AddObjectToObject(capabilities, telemetry.capability_name);
+    cJSON_AddNumberToObject(capability, "value", telemetry.capability_value);
+    cJSON_AddBoolToObject(capability, "valid", telemetry.capability_valid);
 
     send_response(response);
 

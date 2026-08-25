@@ -1,7 +1,30 @@
 function formatDeviceName(name) {
-    return name.replaceAll("_", " ").replace(/\b\w/g, character =>
+    return name
+        .replaceAll("_", " ")
+        .replace(/\b\w/g, character =>
             character.toUpperCase()
         );
+}
+
+function getDeviceValue(device) {
+    switch (device.type) {
+        case "Temperature Node": {
+            const value = device.readings?.temperature?.value;
+            return value === undefined || value === null
+                ? "--"
+                : `${Number(value).toFixed(1)} °C`;
+        }
+        case "Smart Switch": {
+            const value = device.readings?.switch?.value;
+            return value ? "On" : "Off";
+        }
+        case "Door Sensor": {
+            const value = device.readings?.contact?.value;
+            return value ? "Open" : "Closed";
+        }
+        default:
+            return "Unknown";
+    }
 }
 
 export function renderDevices(devices) {
@@ -21,12 +44,17 @@ export function renderDevices(devices) {
 
         item.innerHTML = `
             <div class="device-info">
-                <strong>${formatDeviceName(device.name)}</strong>
-                <small>${device.online ? "Online" : "Offline"}</small>
+                <strong>
+                    ${formatDeviceName(device.name)}
+                </strong>
+
+                <small>
+                    ${device.online ? "Online" : "Offline"}
+                </small>
             </div>
 
-            <div class="device-temperature">
-                ${device.temperature ?? "--"} °C
+            <div class="device-value">
+                ${getDeviceValue(device)}
             </div>
         `;
 

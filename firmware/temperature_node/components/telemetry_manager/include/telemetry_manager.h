@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <time.h>
 
 
 typedef struct{
@@ -10,10 +11,13 @@ typedef struct{
     char device_name[32];
     char device_type[32];
     char firmware[16];
-    float temperature;
-    bool sensor_valid;
+    char capability_name[16];
+    float capability_value;
+    bool capability_valid;
     uint32_t uptime;
     int rssi;
+    time_t timestamp;
+    bool time_valid;
 }telemetry_t;
 
 

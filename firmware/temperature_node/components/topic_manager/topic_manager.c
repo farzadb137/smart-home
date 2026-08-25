@@ -16,9 +16,10 @@ static char response_topic[128];
 
 const char *topic_manager_get_telemetry(void){
 
-    const device_info_t *info = device_info_get();
+    char id_hex[DEVICE_ID_HEX_LEN];
+    device_info_get_id_hex(id_hex, sizeof(id_hex));
 
-    snprintf(telemetry_topic, sizeof(telemetry_topic), "home/devices/%s/telemetry", info->name);
+    snprintf(telemetry_topic, sizeof(telemetry_topic), "home/devices/%s/telemetry", id_hex);
 
     return telemetry_topic;
 }
@@ -26,27 +27,30 @@ const char *topic_manager_get_telemetry(void){
 
 const char *topic_manager_get_status(void){
 
-    const device_info_t *info = device_info_get();
+    char id_hex[DEVICE_ID_HEX_LEN];
+    device_info_get_id_hex(id_hex, sizeof(id_hex));
 
-    snprintf(status_topic, sizeof(status_topic), "home/devices/%s/status", info->name);
+    snprintf(status_topic, sizeof(status_topic), "home/devices/%s/status", id_hex);
 
     return status_topic;
 }
 
 const char *topic_manager_get_command(void){
 
-    const device_info_t *info = device_info_get();
+    char id_hex[DEVICE_ID_HEX_LEN];
+    device_info_get_id_hex(id_hex, sizeof(id_hex));
 
-    snprintf(command_topic, sizeof(command_topic), "home/devices/%s/command", info->name);
+    snprintf(command_topic, sizeof(command_topic), "home/devices/%s/command", id_hex);
 
     return command_topic;
 }
 
 const char *topic_manager_get_response(void){
 
-    const device_info_t *info = device_info_get();
+    char id_hex[DEVICE_ID_HEX_LEN];
+    device_info_get_id_hex(id_hex, sizeof(id_hex));
 
-    snprintf(response_topic, sizeof(response_topic), "home/devices/%s/response", info->name);
+    snprintf(response_topic, sizeof(response_topic), "home/devices/%s/response", id_hex);
 
     return response_topic;
 }

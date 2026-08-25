@@ -33,7 +33,7 @@ function updateDashboard() {
 
     renderClimate({
         state: "normal",
-        temperature: climateDevice.temperature,
+        temperature: climateDevice.readings?.temperature?.value ?? null,
         online: climateDevice.online
     });
     renderDevices(appState.devices);

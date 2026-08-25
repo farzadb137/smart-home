@@ -6,7 +6,7 @@
 #include "nvs.h"
 #include <string.h>
 
-#define APP_CONFIG_VERSION  2
+#define APP_CONFIG_VERSION  1
 #define APP_CONFIG_MAGIC UINT32_C(0x3D593E4B)
 
 #define TELEMETRY_INTERVAL_MIN_SEC   5
@@ -46,7 +46,7 @@ static void config_set_defaults(void){
     config_storage.magic = APP_CONFIG_MAGIC;
     config_storage.version = APP_CONFIG_VERSION;
 
-    strcpy(config_storage.config.device_name, "TEMP-DEFAULT-0003");
+    strcpy(config_storage.config.device_name, "TEMP-DEFAULT-0001");
 
     config_storage.config.telemetry_interval_sec = 10;
 

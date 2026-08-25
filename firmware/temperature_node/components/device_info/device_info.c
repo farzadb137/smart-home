@@ -47,6 +47,34 @@ const char *device_type_to_string(device_type_t type){
 
 }
 
+void device_info_get_id_hex(char *out, size_t out_size){
+ 
+    const device_info_t *info = device_info_get();
+ 
+    /* mask to 48 bits, zero-padded so the string length is always fixed
+     * (a leading-zero ID must not silently produce a shorter string, or
+     * downstream ACL/topic matching gets subtle and hard-to-debug bugs) */
+    snprintf(out, out_size, "%012llX", (unsigned long long)(info->id & 0xFFFFFFFFFFFFULL));
+ 
+}
+
+const char *device_type_to_capability(device_type_t type){
+
+    switch(type){
+        case DEVICE_TYPE_TEMPERATURE:   return "temperature";
+        case DEVICE_TYPE_SWITCH:        return "switch";
+        case DEVICE_TYPE_DOOR_SENSOR:   return "contact";
+        default:                        return "unknown";
+    }
+
+}
+
+const char *device_info_get_capability(void){
+
+    return device_type_to_capability(device_info_get()->type);
+
+}
+
 void device_info_print(void){
 
     const device_info_t *info = device_info_get();
