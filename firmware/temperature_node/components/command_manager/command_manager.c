@@ -4,6 +4,8 @@
 #include "config_manager.h"
 #include "status_manager.h"
 #include "telemetry_manager.h"
+#include "ota_manager.h"
+#include "device_info.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -30,6 +32,7 @@ static void handle_get_status(cJSON *root);
 static void handle_get_telemetry(cJSON *root);
 static void handle_set_config(cJSON *root);
 static void handle_restart(cJSON *root);
+static void handle_ota_update(cJSON *root);
 
 
 static const command_entry_t command_table[] = {
@@ -38,6 +41,7 @@ static const command_entry_t command_table[] = {
     { "get_telemetry",  handle_get_telemetry    },
     { "set_config",     handle_set_config       },
     { "restart",        handle_restart          },
+    { "ota_update",     handle_ota_update       },
 };
 
 #define COMMAND_COUNT (sizeof(command_table) / sizeof(command_table[0]))
@@ -171,6 +175,64 @@ static void handle_restart(cJSON *root){
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     esp_restart();
+
+}
+
+static void ota_status_report(bool success, const char *message){
+
+    cJSON *response = cJSON_CreateObject();
+    cJSON_AddBoolToObject(response, "success", success);
+    cJSON *data = cJSON_AddObjectToObject(response, "data");
+    cJSON_AddStringToObject(data, "message", message);
+
+    send_response(response);
+
+    cJSON_Delete(response);
+
+}
+
+static void handle_ota_update(cJSON *root){
+
+    cJSON *data = cJSON_GetObjectItem(root, "data");
+    cJSON *url = cJSON_GetObjectItem(data, "url");
+    cJSON *version = cJSON_GetObjectItem(data, "version");
+    cJSON *sha256 = cJSON_GetObjectItem(data, "sha256");
+
+    if((url == NULL) || !cJSON_IsString(url) || (sha256 == NULL) || !cJSON_IsString(sha256)){
+        cJSON *response = cJSON_CreateObject();
+        cJSON_AddBoolToObject(response, "success", false);
+        cJSON_AddStringToObject(response, "error", "OTA command requires 'url' and 'sha256'");
+        send_response(response);
+        cJSON_Delete(response);
+        return;
+    }
+
+    const device_info_t *info = device_info_get();
+    if((version != NULL) && cJSON_IsString(version) && (strcmp(version->valuestring, info->firmware) == 0)){
+        cJSON *response = cJSON_CreateObject();
+        cJSON_AddBoolToObject(response, "success", false);
+        cJSON *response_data = cJSON_AddObjectToObject(response, "data");
+        cJSON_AddStringToObject(response_data, "message", "Already running this version, OTA skipped");
+        send_response(response);
+        cJSON_Delete(response);
+        return;
+    }
+
+    if(ota_manager_start(url->valuestring, sha256->valuestring, ota_status_report) != ESP_OK){
+        cJSON *response = cJSON_CreateObject();
+        cJSON_AddBoolToObject(response, "success", false);
+        cJSON_AddStringToObject(response, "error", "Failed to start OTA task");
+        send_response(response);
+        cJSON_Delete(response);
+        return;
+    }
+
+    cJSON *response = cJSON_CreateObject();
+    cJSON_AddBoolToObject(response, "success", true);
+    cJSON *response_data = cJSON_AddObjectToObject(response, "data");
+    cJSON_AddStringToObject(response_data, "message", "OTA started");
+    send_response(response);
+    cJSON_Delete(response);
 
 }
 

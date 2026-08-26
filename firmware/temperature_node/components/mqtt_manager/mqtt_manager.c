@@ -5,6 +5,7 @@
 #include "config_manager.h"
 #include "topic_manager.h"
 #include "command_manager.h"
+#include "ota_manager.h"
 
 #include "mqtt_client.h"
 
@@ -35,6 +36,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
             mqtt_connected = true;
             led_manager_set_state(LED_STATE_MQTT_CONNECTED);
             LOG_INFO(TAG, "MQTT connected");
+
+            ota_manager_confirm_valid();
 
             const char *cmd_topic = topic_manager_get_command();
             LOG_INFO(TAG, "Subscribing to: %s", cmd_topic);

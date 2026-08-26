@@ -6,5 +6,7 @@ idf_component_register(
         config_manager
         status_manager
         telemetry_manager
+        ota_manager
+        device_info
         cjson
 )

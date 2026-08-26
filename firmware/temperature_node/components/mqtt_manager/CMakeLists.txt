@@ -9,4 +9,5 @@ idf_component_register(
         telemetry_manager
         topic_manager
         command_manager
+        ota_manager
 )

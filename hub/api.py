@@ -1,5 +1,8 @@
-from flask import Flask, jsonify, request
+import os
+from flask import Flask, jsonify, request, send_from_directory
 from database import get_connection, get_latest_readings
+
+FIRMWARE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "firmware")
 
 app = Flask(__name__, static_folder="static", static_url_path="")
 
@@ -104,6 +107,10 @@ def get_telemetry(device_name):
 			}
 		for row in rows
 		])
+
+@app.route("/firmware/<path:filename>")
+def get_firmware(filename):
+	return send_from_directory(FIRMWARE_DIR, filename, mimetype="application/octet-stream")
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=5000, debug=False)

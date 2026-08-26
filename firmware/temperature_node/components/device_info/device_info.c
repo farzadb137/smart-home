@@ -23,7 +23,7 @@ void device_info_init(void){
         .manufacturer = "BSM",
         .type = DEVICE_TYPE_TEMPERATURE,
         .model = "SmartTemp-V1.0",
-        .firmware = "0.3.0",
+        .firmware = "0.4.0",
         .hardware = "Rev A",
         .name = ""
     };
