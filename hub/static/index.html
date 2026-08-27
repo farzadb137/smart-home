@@ -51,39 +51,47 @@
 					<strong>Home</strong>
 					<small>All systems normal</small>
 				</div>
+				<button id="logout-btn" style="margin-left:auto;background:none;border:none;color:var(--color-text-muted);cursor:pointer;font-size:12px;">Sign out</button>
 			</div>
 		</aside>
 		<main class="main-content">
-			<header>
-				<h2>Good Evening</h2>
+			<header class="topbar">
+			    <div>
+			        <h2 class="greeting-text">Good Evening</h2>
+			        <p class="topbar-date"></p>
+			    </div>
+			    <div class="topbar-time"></div>
 			</header>
 			<div class="dashboard-grid">
 				<section class="card climate-card">
-					<div class="card-header">
-						<div>
-							<p class="card-label">CLIMATE</p>
-							<h2 class="climate-room">Living Room</h2>
-						</div>
-						<span class="status-badge">
-							<span class="status-dot"></span>
-							<span class="status-text">Online</span>
-						</span>
-					</div>
-					<div class="temperature">
-						<span class="temperature-value">22.5</span>
-						<span class="temperature-unit">°C</span>
-					</div>
-					<div class="climate-details">
-						<div class="detail">
-				            <span class="detail-label">Temperature</span>
-				            <span class="detail-value temperature-detail">22.5 °C</span>
-				        </div>
-				        <div class="detail">
-				            <span class="detail-label">Last updated</span>
-				            <span class="detail-value">Just now</span>
-				        </div>
-					</div>
-				</section>
+			        <div class="card-header">
+			            <div class="climate-card-heading">
+			                <span class="climate-card-icon"></span>
+			                <div>
+			                    <p class="card-label">TEMPERATURE</p>
+			                    <h2 class="climate-room">Loading…</h2>
+			                </div>
+			            </div>
+			            <span class="status-badge">
+			                <span class="status-dot"></span>
+			                <span class="status-text">Online</span>
+			            </span>
+			        </div>
+			        <div class="temperature">
+			            <span class="temperature-value">--</span>
+			            <span class="temperature-unit">°C</span>
+			        </div>
+			        <div class="climate-details">
+			            <div class="detail">
+			                <span class="detail-label">Temperature</span>
+			                <span class="detail-value temperature-detail">-- °C</span>
+			            </div>
+			            <div class="detail">
+			                <span class="detail-label">Last updated</span>
+			                <span class="detail-value last-updated-value">--</span>
+			            </div>
+			        </div>
+			    </section>
 				<section class="card">
 					<h2>Rooms</h2>
 				</section>

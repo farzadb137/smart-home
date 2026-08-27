@@ -18,6 +18,9 @@ static const char *TAG = "MQTT";
 static esp_mqtt_client_handle_t client = NULL;
 static bool mqtt_connected = false;
 
+extern const uint8_t ca_cert_pem_start[] asm("_binary_mqtt_ca_cert_pem_start");
+extern const uint8_t ca_cert_pem_end[]   asm("_binary_mqtt_ca_cert_pem_end");
+
 /*==========================================================
  * Private Functions
  *=========================================================*/
@@ -95,6 +98,8 @@ esp_err_t mqtt_manager_init(void){
 
     esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = config->mqtt_uri,
+        .broker.verification.certificate = (const char *)ca_cert_pem_start,
+        .broker.verification.certificate_len = ca_cert_pem_end - ca_cert_pem_start,
         .credentials.username = config->mqtt_username,
         .credentials.authentication.password = config->mqtt_password,
         .session.last_will.topic = topic_manager_get_status(),

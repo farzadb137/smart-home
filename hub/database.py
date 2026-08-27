@@ -88,6 +88,15 @@ def init_database():
 			)
 		"""
 		)
+	connection.execute(
+		"""
+		CREATE TABLE IF NOT EXISTS users(
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			username TEXT NOT NULL UNIQUE,
+			password_hash TEXT NOT NULL
+			)
+		"""
+		)
 	connection.commit()
 	connection.close()
 
@@ -225,5 +234,26 @@ def mark_offline_devices(timeout_seconds=30):
 				"UPDATE device_status SET online=? WHERE device_id=?",
 				(0, device_id)
 				)
+	connection.commit()
+	connection.close()
+
+def get_user(username):
+	connection = get_connection()
+	row = connection.execute(
+		"SELECT * FROM users WHERE username=?",
+		(username,)
+		).fetchone()
+	connection.close()
+	return row
+
+def set_user_password(username, password_hash):
+	connection = get_connection()
+	connection.execute(
+		"""
+		INSERT INTO users (username, password_hash) VALUES (?,?)
+		ON CONFLICT(username) DO UPDATE SET password_hash=excluded.password_hash
+		""",
+		(username, password_hash)
+		)
 	connection.commit()
 	connection.close()

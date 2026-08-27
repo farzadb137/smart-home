@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Sign in - Smart Home</title>
+	<link rel="stylesheet" href="css/style.css">
+	<style>
+		.login-wrap { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+		.login-card { width:320px; }
+		.login-card input { width:100%; padding:10px; margin:8px 0; box-sizing:border-box;
+			border:1px solid var(--color-border); border-radius:8px; background:var(--color-surface-light); color:var(--color-text); }
+		.login-card button { width:100%; padding:10px; margin-top:8px; border:none; border-radius:8px;
+			background:var(--color-primary); color:#1a1310; font-weight:600; cursor:pointer; }
+		.login-error { color:var(--color-danger); font-size:13px; min-height:18px; margin-top:6px; }
+	</style>
+</head>
+<body>
+	<div class="login-wrap">
+		<div class="card login-card">
+			<h2>Sign in</h2>
+			<input type="text" id="username" placeholder="Username" autocomplete="username">
+			<input type="password" id="password" placeholder="Password" autocomplete="current-password">
+			<button id="submit">Sign in</button>
+			<div class="login-error" id="error"></div>
+		</div>
+	</div>
+	<script>
+		const errorEl = document.getElementById("error");
+
+		async function attemptLogin() {
+			errorEl.textContent = "";
+			const username = document.getElementById("username").value;
+			const password = document.getElementById("password").value;
+
+			try {
+				const response = await fetch("/api/login", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ username, password })
+				});
+				if (response.ok) {
+					window.location.href = "/";
+					return;
+				}
+				const data = await response.json().catch(() => ({}));
+				errorEl.textContent = data.error || "Sign in failed";
+			} catch (error) {
+				errorEl.textContent = "Could not reach the server";
+			}
+		}
+
+		document.getElementById("submit").addEventListener("click", attemptLogin);
+		document.getElementById("password").addEventListener("keydown", (event) => {
+			if (event.key === "Enter") attemptLogin();
+		});
+	</script>
+</body>
+</html>

@@ -1,30 +1,41 @@
-function formatDeviceName(name) {
-    return name
-        .replaceAll("_", " ")
-        .replace(/\b\w/g, character =>
-            character.toUpperCase()
-        );
+import { CAPABILITY_ICONS, DEFAULT_ICON } from "../icons.js";
+import { formatDeviceName } from "../utils.js";
+
+const CAPABILITY_FORMATTERS = {
+    temperature: (value) => value == null ? "--" : `${Number(value).toFixed(1)} °C`,
+    switch: (value) => value ? "On" : "Off",
+    contact: (value) => value ? "Open" : "Closed",
+};
+
+function getPrimaryCapability(device) {
+    const capabilities = Object.keys(device.readings || {});
+    return capabilities.length > 0 ? capabilities[0] : null;
 }
 
-function getDeviceValue(device) {
-    switch (device.type) {
-        case "Temperature Node": {
-            const value = device.readings?.temperature?.value;
-            return value === undefined || value === null
-                ? "--"
-                : `${Number(value).toFixed(1)} °C`;
-        }
-        case "Smart Switch": {
-            const value = device.readings?.switch?.value;
-            return value ? "On" : "Off";
-        }
-        case "Door Sensor": {
-            const value = device.readings?.contact?.value;
-            return value ? "Open" : "Closed";
-        }
-        default:
-            return "Unknown";
+function formatCapabilityValue(capability, value) {
+    const formatter = CAPABILITY_FORMATTERS[capability];
+    if (formatter)
+        return formatter(value);
+    return value == null ? "--" : String(value);
+}
+
+function renderControl(device, capability) {
+    const value = device.readings?.[capability]?.value;
+
+    // Actuator capabilities get a toggle - disabled for now since
+    // there's no command channel wired up yet (that's a later phase,
+    // once real switch/actuator hardware exists). It still reflects
+    // the device's last known state, just can't be operated yet.
+    if (capability === "switch") {
+        return `
+            <label class="device-toggle" title="Control coming soon">
+                <input type="checkbox" disabled ${value ? "checked" : ""}>
+                <span class="device-toggle-slider"></span>
+            </label>
+        `;
     }
+
+    return `<div class="device-card-value">${formatCapabilityValue(capability, value)}</div>`;
 }
 
 export function renderDevices(devices) {
@@ -38,26 +49,22 @@ export function renderDevices(devices) {
     container.innerHTML = "";
 
     devices.forEach(device => {
-        const item = document.createElement("div");
+        const capability = getPrimaryCapability(device);
+        const icon = capability ? (CAPABILITY_ICONS[capability] || DEFAULT_ICON) : DEFAULT_ICON;
 
-        item.classList.add("device-item");
+        const card = document.createElement("div");
+        card.classList.add("device-card");
 
-        item.innerHTML = `
-            <div class="device-info">
-                <strong>
-                    ${formatDeviceName(device.name)}
-                </strong>
-
-                <small>
-                    ${device.online ? "Online" : "Offline"}
-                </small>
+        card.innerHTML = `
+            <div class="device-card-top">
+                <span class="device-card-icon">${icon}</span>
+                <span class="device-card-status-dot ${device.online ? "online" : "offline"}"></span>
             </div>
-
-            <div class="device-value">
-                ${getDeviceValue(device)}
-            </div>
+            <strong class="device-card-name">${formatDeviceName(device.name)}</strong>
+            <small class="device-card-subtitle">${device.online ? "Online" : "Offline"}</small>
+            ${capability ? renderControl(device, capability) : ""}
         `;
 
-        container.append(item);
+        container.append(card);
     });
 }
