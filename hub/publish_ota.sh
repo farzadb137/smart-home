@@ -29,7 +29,7 @@ if [ "$(readlink -f "$BIN_FILE")" != "$(readlink -f "$DEST_PATH")" ]; then
 fi
 
 SHA256=$(sha256sum "$DEST_PATH" | awk '{print $1}')
-URL="http://$HUB_HOST:5000/firmware/$FILENAME"
+URL="https://$HUB_HOST:5000/firmware/$FILENAME"
 
 PAYLOAD=$(printf '{"command":"ota_update","data":{"url":"%s","version":"%s","sha256":"%s"}}' \
     "$URL" "$VERSION" "$SHA256")

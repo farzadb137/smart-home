@@ -21,6 +21,9 @@
 
 static const char *TAG = "OTA";
 
+extern const uint8_t ca_cert_pem_start[] asm("_binary_ota_ca_cert_pem_start");
+extern const uint8_t ca_cert_pem_end[]   asm("_binary_ota_ca_cert_pem_end");
+
 typedef struct{
     char url[OTA_URL_MAX];
     char expected_sha256[OTA_HASH_HEX_LEN];
@@ -58,7 +61,9 @@ static void ota_task(void *pv){
     esp_http_client_config_t http_config = {
         .url = args->url,
         .timeout_ms = 15000,
-        .keep_alive_enable = true
+        .keep_alive_enable = true,
+        .cert_pem = (const char *)ca_cert_pem_start,
+        .cert_len = ca_cert_pem_end - ca_cert_pem_start
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&http_config);

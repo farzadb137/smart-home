@@ -1,6 +1,7 @@
 idf_component_register(
     SRCS "mqtt_manager.c"
     INCLUDE_DIRS "include"
+    EMBED_TXTFILES "certs/mqtt_ca_cert.pem"
     REQUIRES
         led_manager
         logger
