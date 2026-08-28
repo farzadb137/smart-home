@@ -12,4 +12,5 @@ idf_component_register(
         config_manager
         lwip
         cjson
+        mdns
 )

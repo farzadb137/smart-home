@@ -6,6 +6,7 @@
 #include "telemetry_manager.h"
 #include "ota_manager.h"
 #include "device_info.h"
+#include "sensor_manager.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -31,8 +32,10 @@ static void handle_get_config(cJSON *root);
 static void handle_get_status(cJSON *root);
 static void handle_get_telemetry(cJSON *root);
 static void handle_set_config(cJSON *root);
+static void handle_set_capability(cJSON *root);
 static void handle_restart(cJSON *root);
 static void handle_ota_update(cJSON *root);
+
 
 
 static const command_entry_t command_table[] = {
@@ -40,8 +43,10 @@ static const command_entry_t command_table[] = {
     { "get_status",     handle_get_status       },
     { "get_telemetry",  handle_get_telemetry    },
     { "set_config",     handle_set_config       },
+    { "set_capability", handle_set_capability   },
     { "restart",        handle_restart          },
     { "ota_update",     handle_ota_update       },
+    
 };
 
 #define COMMAND_COUNT (sizeof(command_table) / sizeof(command_table[0]))
@@ -76,6 +81,44 @@ static const command_entry_t command_table[] = {
     cJSON_Delete(response);
 
  }
+
+ static void handle_set_capability(cJSON *root){
+
+    cJSON *data = cJSON_GetObjectItem(root, "data");
+    cJSON *name = cJSON_GetObjectItem(data, "name");
+    cJSON *value = cJSON_GetObjectItem(data, "value");
+
+    if((name == NULL) || !cJSON_IsString(name) || (value == NULL) || !cJSON_IsNumber(value)){
+        cJSON *response = cJSON_CreateObject();
+        cJSON_AddBoolToObject(response, "success", false);
+        cJSON_AddStringToObject(response, "error", "set_capability requires 'name' and 'value'");
+        send_response(response);
+        cJSON_Delete(response);
+        return;
+    }
+
+    esp_err_t err = sensor_manager_set_capability(name->valuestring, (float)value->valuedouble);
+
+    cJSON *response = cJSON_CreateObject();
+    cJSON_AddBoolToObject(response, "success", err == ESP_OK);
+
+    if(err == ESP_OK){
+        cJSON *response_data = cJSON_AddObjectToObject(response, "data");
+        cJSON_AddStringToObject(response_data, "name", name->valuestring);
+        cJSON_AddNumberToObject(response_data, "value", value->valuedouble);
+    }
+    else{
+        const char *reason = (err == ESP_ERR_NOT_FOUND)     ? "Unknown capability" :
+                              (err == ESP_ERR_NOT_SUPPORTED) ? "Capability is not writable" :
+                                                                "Failed to set capability";
+        cJSON_AddStringToObject(response, "error", reason);
+    }
+
+    send_response(response);
+
+    cJSON_Delete(response);
+
+}
 
 static void handle_get_status(cJSON *root){
 

@@ -17,13 +17,14 @@
 #include "lwip/sockets.h"
 #include "sys/param.h"
 #include "cJSON.h"
+#include "mdns.h"
 
 #include <string.h>
 #include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#define AP_PASSWORD_LENGTH      10
+
 #define WIFI_CONNECT_TIMEOUT_MS 15000
 #define CLAIM_HTTP_TIMEOUT_MS   10000
 #define HUB_ADDRESS_MAX         64
@@ -71,7 +72,7 @@ static const char html_form[] =
     "<div id='manual_wrap'><label>Network Name (manual):</label>"
     "<input type='text' name='ssid_manual' id='ssid_manual'></div>"
     "<label>WiFi Password:</label><input type='password' name='password' required>"
-    "<label>Hub Address:</label><input type='text' name='hub_address' placeholder='192.168.1.50' required>"
+    "<label>Hub Address:</label><input type='text' name='hub_address' value='smarthome-hub.local' required>"
     "<label>Claim Code:</label><input type='text' name='claim_code' placeholder='from Add Device page' required style='text-transform:uppercase;'>"
     "<button type='submit'>Save & Apply</button>"
     "</form></div>"
@@ -106,24 +107,6 @@ static const char html_form[] =
     "});"
     "</script>"
     "</body></html>";
-
-/* Charset excludes 0/O and 1/l/I - this password gets read off a serial
- * monitor and typed on a phone keyboard, so visual ambiguity is a real
- * usability problem, not just a nitpick. 32 chars * 10 length ~= 50 bits
- * of entropy, plenty for a short-lived provisioning-window secret. */
-static const char ap_password_charset[] = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
- 
-static void generate_ap_password(char *out, size_t out_size){
- 
-    size_t charset_len = strlen(ap_password_charset);
-    size_t length = (out_size - 1 < AP_PASSWORD_LENGTH) ? (out_size - 1) : AP_PASSWORD_LENGTH;
- 
-    for(size_t i = 0;i < length;i++)
-        out[i] = ap_password_charset[esp_random() % charset_len];
- 
-    out[length] = '\0';
- 
-}
 
 static int hex_digit_value(char c){
     if((c >= '0') && (c <= '9'))
@@ -247,12 +230,58 @@ static esp_err_t claim_http_event_handler(esp_http_client_event_t *evt){
     return ESP_OK;
 }
 
+static bool has_local_suffix(const char *s){
+
+    size_t len = strlen(s);
+
+    return (len >= 6) && (strcasecmp(s + len - 6, ".local") == 0);
+
+}
+
+/* esp_http_client's normal DNS path does NOT understand mDNS - ".local"
+ * names need the dedicated mdns component. If hub_address isn't a
+ * ".local" name, this is a no-op and the caller uses it as-is (works
+ * for both a raw IP and a regular resolvable hostname). */
+static bool resolve_hub_address(const char *hub_address, char *out, size_t out_size){
+
+    if(!has_local_suffix(hub_address)){
+        strncpy(out, hub_address, out_size - 1);
+        out[out_size - 1] = '\0';
+        return true;
+    }
+
+    char hostname[64];
+    strncpy(hostname, hub_address, sizeof(hostname) - 1);
+    hostname[sizeof(hostname) - 1] = '\0';
+    hostname[strlen(hostname) - 6] = '\0';  /* strip trailing ".local" */
+
+    esp_ip4_addr_t addr;
+    esp_err_t err = mdns_query_a(hostname, 2000, &addr);
+    if(err != ESP_OK){
+        LOG_ERROR(TAG, "mDNS lookup failed for '%s.local': %s", hostname, esp_err_to_name(err));
+        return false;
+    }
+
+    snprintf(out, out_size, IPSTR, IP2STR(&addr));
+
+    LOG_INFO(TAG, "Resolved '%s.local' -> %s", hostname, out);
+
+    return true;
+
+}
+
 static void provision_claim_device(const char *hub_address, const char *claim_code, claim_result_t *result){
 
     memset(result, 0, sizeof(claim_result_t));
 
+    char resolved_address[64];
+    if(!resolve_hub_address(hub_address, resolved_address, sizeof(resolved_address))){
+        snprintf(result->error, sizeof(result->error), "Could not resolve hub address '%s'", hub_address);
+        return;
+    }
+
     char url[128];
-    snprintf(url, sizeof(url), "https://%s:5000/api/provision/claim", hub_address);
+    snprintf(url, sizeof(url), "https://%s:5000/api/provision/claim", resolved_address);
 
     char id_hex[DEVICE_ID_HEX_LEN];
     device_info_get_id_hex(id_hex, sizeof(id_hex));
@@ -594,41 +623,29 @@ static esp_err_t provision_manager_start_ap(void){
     char id_hex[DEVICE_ID_HEX_LEN];
     device_info_get_id_hex(id_hex, sizeof(id_hex));
 
+    const device_info_t *info = device_info_get();
+
     uint8_t wifi_ssid[32];
-    snprintf((char *)wifi_ssid, sizeof(wifi_ssid), "SmartTemp-Setup-%s", id_hex);
-
-    /* Generate the AP password once per unprovisioned lifetime and persist it,
-     * so it doesn't change if the device reboots mid-setup. A factory reset
-     * (config_set_defaults) clears it back to empty, so the next unprovisioned
-     * boot gets a fresh one - this is intentional, not a bug. */
-    const app_config_t *config = config_manager_get();
-    char ap_password[sizeof(config->ap_password)];
-
-    if(strlen(config->ap_password) == 0){
-        generate_ap_password(ap_password, sizeof(ap_password));
-        config_manager_update_ap_password(ap_password);
-    }
-    else{
-        strncpy(ap_password, config->ap_password, sizeof(ap_password) - 1);
-        ap_password[sizeof(ap_password) - 1] = '\0';
-    }
+    snprintf((char *)wifi_ssid, sizeof(wifi_ssid), "%s-Setup-%s", device_type_to_setup_prefix(info->type), id_hex);
 
     LOG_INFO(TAG, "=====================================================");
-    LOG_INFO(TAG, " Setup network : %s", wifi_ssid);
-    LOG_INFO(TAG, " Setup password: %s", ap_password);
+    LOG_INFO(TAG, " Setup network : %s (open, no password)", wifi_ssid);
     LOG_INFO(TAG, "=====================================================");
 
     wifi_config_t wifi_config = {0};
     wifi_config.ap.channel = 1;
-    wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
+    wifi_config.ap.authmode = WIFI_AUTH_OPEN;
     wifi_config.ap.max_connection = 4;
     wifi_config.ap.ssid_len = strlen((char*)wifi_ssid);
     strncpy((char *)wifi_config.ap.ssid, (char *)wifi_ssid, sizeof(wifi_config.ap.ssid) - 1);
-    strncpy((char *)wifi_config.ap.password, ap_password, sizeof(wifi_config.ap.password) - 1);
-
+    
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_APSTA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
+
+    esp_err_t mdns_err = mdns_init();
+    if(mdns_err != ESP_OK)
+        LOG_WARN(TAG, "mDNS init failed (%s) - .local hub addresses won't resolve, raw IP still works", esp_err_to_name(mdns_err));
 
     return ESP_OK;
 }

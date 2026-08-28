@@ -1,4 +1,4 @@
-idf_component_register(SRCS "main.c"
+idf_component_register(SRCS "main.c" "capability_drivers.c"
                     INCLUDE_DIRS "."
                     REQUIRES 
                         led_manager
@@ -13,4 +13,5 @@ idf_component_register(SRCS "main.c"
                         time_manager
                         mqtt_manager
                         app_manager
+                        ds18b20
 )
