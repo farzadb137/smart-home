@@ -54,3 +54,9 @@ const char *topic_manager_get_response(void){
 
     return response_topic;
 }
+
+const char *topic_manager_get_time_sync(void){
+
+    return "home/time";
+
+}

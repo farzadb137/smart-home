@@ -1,15 +1,22 @@
 import os
 import secrets
+import time
+import threading
+import subprocess
+import re
+
 from datetime import timedelta
 from functools import wraps
 
 from flask import Flask, jsonify, request, send_from_directory, session
 from werkzeug.security import check_password_hash
 
-from database import get_connection, get_latest_readings, get_user
+from config import MQTT_URI_FOR_DEVICES, MOSQUITTO_PASSWD_FILE
+from database import get_connection, get_latest_readings, get_user, get_or_create_device
 
 FIRMWARE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "firmware")
 SECRET_KEY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".flask_secret_key")
+
 
 def _load_or_create_secret_key():
 	if os.path.exists(SECRET_KEY_PATH):
@@ -29,6 +36,38 @@ app.config.update(
 	SESSION_COOKIE_SAMESITE="Lax",
 	PERMANENT_SESSION_LIFETIME=timedelta(days=30)
 	)
+
+CLAIM_CODE_CHARSET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"  # no 0/O/1/l/I - typed by hand
+CLAIM_CODE_LENGTH = 6
+CLAIM_WINDOW_SECONDS = 120
+
+_pending_claims = {}
+_claims_lock = threading.Lock()
+
+def _generate_claim_code():
+	return "".join(secrets.choice(CLAIM_CODE_CHARSET) for _ in range(CLAIM_CODE_LENGTH))
+
+def _cleanup_expired_claims():
+	now = time.time()
+	expired = [code for code, claim in _pending_claims.items() if claim["expires_at"] < now]
+	for code in expired:
+		del _pending_claims[code]
+
+def _provision_mqtt_credentials(username):
+	# Re-implements add_device.sh in Python so it can run from an API
+	# request instead of requiring SSH + manual invocation. Same tool,
+	# same file, same reload - just triggered differently.
+	password = secrets.token_urlsafe(18)
+
+	if os.path.exists(MOSQUITTO_PASSWD_FILE):
+		cmd = ["sudo", "mosquitto_passwd", "-b", MOSQUITTO_PASSWD_FILE, username, password]
+	else:
+		cmd = ["sudo", "mosquitto_passwd", "-c", "-b", MOSQUITTO_PASSWD_FILE, username, password]
+
+	subprocess.run(cmd, check=True, capture_output=True, text=True)
+	subprocess.run(["sudo", "systemctl", "reload", "mosquitto"], check=True, capture_output=True, text=True)
+
+	return password
 
 def login_required(view):
 	@wraps(view)
@@ -177,10 +216,63 @@ def get_telemetry(device_name):
 
 @app.route("/firmware/<path:filename>")
 def get_firmware(filename):
-	# Deliberately NOT login_required - devices have no session, no browser.
-	# Protected instead by HTTPS + the SHA-256 supplied over the already-
-	# authenticated MQTT channel. See roadmap notes for the reasoning.
 	return send_from_directory(FIRMWARE_DIR, filename, mimetype="application/octet-stream")
+
+@app.route("/api/provision/start", methods=["POST"])
+@login_required
+def provision_start():
+	with _claims_lock:
+		_cleanup_expired_claims()
+		code = _generate_claim_code()
+		while code in _pending_claims:
+			code = _generate_claim_code()
+		_pending_claims[code] = {"expires_at": time.time() + CLAIM_WINDOW_SECONDS}
+
+	return jsonify({"success": True, "data": {"code": code, "expires_in": CLAIM_WINDOW_SECONDS}})
+
+@app.route("/api/provision/claim", methods=["POST"])
+def provision_claim():
+	# Deliberately NOT login_required - the device has no session or
+	# browser. It authenticates this one request with the short-lived
+	# claim code instead, the same trust model /firmware already uses
+	# (HTTPS + a secret proven over that channel, not a login).
+	payload = request.get_json(silent=True) or {}
+	claim_code = (payload.get("claim_code") or "").strip().upper()
+	hardware_id = (payload.get("hardware_id") or "").strip().upper()
+	device_type = payload.get("device_type")
+
+	if not re.match(r"^[0-9A-F]{12}$", hardware_id):
+		return jsonify({"success": False, "error": "Invalid hardware_id"}), 400
+
+	with _claims_lock:
+		_cleanup_expired_claims()
+		claim = _pending_claims.pop(claim_code, None)  # pop = single-use, can't be replayed
+
+	if claim is None:
+		return jsonify({"success": False, "error": "Invalid or expired claim code"}), 400
+
+	try:
+		password = _provision_mqtt_credentials(hardware_id)
+	except subprocess.CalledProcessError as error:
+		print(f"[PROVISION] Credential generation failed: {error.stderr}")
+		return jsonify({"success": False, "error": "Failed to generate device credentials"}), 500
+
+	get_or_create_device(int(hardware_id, 16), None, device_type, None)
+
+	print(f"[PROVISION] Claimed device {hardware_id}")
+
+	return jsonify({
+		"success": True,
+		"data": {
+			"mqtt_uri": MQTT_URI_FOR_DEVICES,
+			"mqtt_username": hardware_id,
+			"mqtt_password": password
+		}
+	})
+
+@app.route("/add-device")
+def add_device_page():
+	return app.send_static_file("add-device.html")
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=5000, ssl_context=("/home/farzad/iot/certs/api.crt", "/home/farzad/iot/certs/api.key"))

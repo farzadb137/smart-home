@@ -1,9 +1,5 @@
 [Unit]
 Description=IoT Hub - Flask API
-# Ordering only, not a hard dependency: the collector must run at least
-# once to create the SQLite schema (it calls migrate_database() on
-# import), but if the collector later crashes, the API should keep
-# serving whatever's already in the database rather than going down too.
 After=network-online.target iot-collector.service
 Wants=network-online.target iot-collector.service
 
@@ -11,8 +7,6 @@ Wants=network-online.target iot-collector.service
 Type=simple
 User=farzad
 Group=farzad
-# TODO: adjust to your actual API path/venv - these are placeholders,
-# not read from your logs like the collector's paths were.
 WorkingDirectory=/home/farzad/iot/collector
 ExecStart=/home/farzad/iot/collector/.venv/bin/python3 /home/farzad/iot/collector/api.py
 
@@ -21,7 +15,6 @@ RestartSec=5
 StartLimitIntervalSec=60
 StartLimitBurst=5
 
-NoNewPrivileges=yes
 PrivateTmp=yes
 
 [Install]

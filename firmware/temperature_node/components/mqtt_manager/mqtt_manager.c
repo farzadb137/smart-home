@@ -6,6 +6,7 @@
 #include "topic_manager.h"
 #include "command_manager.h"
 #include "ota_manager.h"
+#include "time_manager.h"
 
 #include "mqtt_client.h"
 
@@ -46,6 +47,10 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
             LOG_INFO(TAG, "Subscribing to: %s", cmd_topic);
             esp_mqtt_client_subscribe(client, cmd_topic, 1);
 
+            const char *time_topic = topic_manager_get_time_sync();
+            LOG_INFO(TAG, "Subscribing to: %s", time_topic);
+            esp_mqtt_client_subscribe(client, time_topic, 1);
+
             mqtt_manager_publish(topic_manager_get_status(), "{\"online\":true}", 1, true);
 
             break;
@@ -69,7 +74,13 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
         case MQTT_EVENT_DATA:
         {
             esp_mqtt_event_handle_t event = event_data;
-            command_manager_handle(event->data, event->data_len);
+
+            const char *time_topic = topic_manager_get_time_sync();
+
+            if((event->topic_len == strlen(time_topic)) && (strncmp(event->topic, time_topic, event->topic_len) == 0))
+                time_manager_handle_sync(event->data, event->data_len);
+            else
+                command_manager_handle(event->data, event->data_len);
 
             break;
         }

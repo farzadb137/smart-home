@@ -40,9 +40,6 @@ def init_database():
 			)
 		"""
 		)
-	# capability is the generalization point - "temperature", "switch",
-	# "contact", etc. A new device type means a new capability string
-	# shows up here, not a new column or a new table.
 	connection.execute(
 		"""
 		CREATE TABLE IF NOT EXISTS readings(
@@ -114,7 +111,7 @@ def migrate_database():
 	connection.commit()
 	connection.close()
 
-def get_or_create_device(hardware_id, device_name, device_type, firmware):
+def get_or_create_device(hardware_id, device_name=None, device_type=None, firmware=None):
 	now = datetime.now(timezone.utc).isoformat()
 	connection = get_connection()
 	row = connection.execute(
@@ -122,10 +119,11 @@ def get_or_create_device(hardware_id, device_name, device_type, firmware):
 		(hardware_id,)
 		).fetchone()
 	if row is None:
+		placeholder_name = device_name if device_name else f"{hardware_id:012X}"
 		device_type_value = device_type if device_type else "unknown"
 		cursor = connection.execute(
 			"INSERT INTO devices (hardware_id, device_name, device_type, firmware, first_seen) VALUES (?,?,?,?,?)",
-			(hardware_id, device_name, device_type_value, firmware, now)
+			(hardware_id, placeholder_name, device_type_value, firmware, now)
 			)
 		device_id = cursor.lastrowid
 		connection.execute(
@@ -135,16 +133,16 @@ def get_or_create_device(hardware_id, device_name, device_type, firmware):
 	else:
 		device_id = row["id"]
 		connection.execute(
-			"UPDATE devices SET firmware = COALESCE(?, firmware), device_name=?, device_type = COALESCE(?, device_type) WHERE id = ?",
+			"UPDATE devices SET firmware = COALESCE(?, firmware), device_name = COALESCE(?, device_name), device_type = COALESCE(?, device_type) WHERE id = ?",
 			(firmware, device_name, device_type, device_id)
 			)
 	connection.commit()
 	connection.close()
 	return device_id
 
-def update_device_status(hardware_id, device_name, firmware, online, rssi, uptime):
+def update_device_status(hardware_id, online, rssi, uptime):
 	now = datetime.now(timezone.utc).isoformat()
-	device_id = get_or_create_device(hardware_id, device_name, None, firmware)
+	device_id = get_or_create_device(hardware_id)
 	connection = get_connection()
 	connection.execute(
 		"UPDATE device_status SET online=?, rssi=?, uptime=?, last_seen=? WHERE device_id=?",

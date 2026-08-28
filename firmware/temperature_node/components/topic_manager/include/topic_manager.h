@@ -9,4 +9,6 @@ const char *topic_manager_get_command(void);
 
 const char *topic_manager_get_response(void);
 
+const char *topic_manager_get_time_sync(void);
+
 #endif

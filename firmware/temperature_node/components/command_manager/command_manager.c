@@ -116,9 +116,12 @@ static void handle_get_telemetry(cJSON *root){
     cJSON_AddNumberToObject(system, "uptime", telemetry.uptime);
     cJSON_AddNumberToObject(system, "rssi", telemetry.rssi);
 
-    cJSON *capability = cJSON_AddObjectToObject(capabilities, telemetry.capability_name);
-    cJSON_AddNumberToObject(capability, "value", telemetry.capability_value);
-    cJSON_AddBoolToObject(capability, "valid", telemetry.capability_valid);
+    for(size_t i = 0;i < telemetry.capability_count;i++){
+        const capability_t *cap = &telemetry.capabilities[i];
+        cJSON *capability = cJSON_AddObjectToObject(capabilities, cap->name);
+        cJSON_AddNumberToObject(capability, "value", cap->value);
+        cJSON_AddBoolToObject(capability, "valid", cap->valid);
+    }
 
     send_response(response);
 

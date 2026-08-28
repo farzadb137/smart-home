@@ -32,17 +32,11 @@ void telemetry_manager_get(telemetry_t *data){
         strncpy(data->firmware, device_info->firmware, sizeof(data->firmware) - 1);
     }
 
-    strncpy(data->capability_name, device_info_get_capability(), sizeof(data->capability_name) - 1);
+    data->capability_count = sensor_manager_get_capabilities(data->capabilities, CAPABILITY_MAX);
 
     const system_info_t *system_info = system_info_get();
     if(system_info)
         data->uptime = system_info->uptime_seconds;
-
-    const sensor_data_t *sensor = sensor_manager_get_data();
-    if(sensor){
-        data->capability_value = sensor->temperature;
-        data->capability_valid = sensor->valid;
-    }
 
     const wifi_status_t *wifi = wifi_manager_get_status();
     if(wifi)
@@ -82,9 +76,12 @@ char *telemetry_manager_to_json(const telemetry_t *telemetry){
     cJSON_AddNumberToObject(system, "timestamp", (double)telemetry->timestamp);
     cJSON_AddBoolToObject(system, "time_valid", telemetry->time_valid);
 
-    cJSON *capability = cJSON_AddObjectToObject(capabilities, telemetry->capability_name);
-    cJSON_AddNumberToObject(capability, "value", telemetry->capability_value);
-    cJSON_AddBoolToObject(capability, "valid", telemetry->capability_valid);
+    for(size_t i = 0;i < telemetry->capability_count;i++){
+        const capability_t *cap = &telemetry->capabilities[i];
+        cJSON *capability = cJSON_AddObjectToObject(capabilities, cap->name);
+        cJSON_AddNumberToObject(capability, "value", cap->value);
+        cJSON_AddBoolToObject(capability, "valid", cap->valid);
+    }
 
     char *json = cJSON_PrintUnformatted(root);
 
@@ -103,7 +100,8 @@ void telemetry_manager_print(void){
     LOG_INFO(TAG, "Device      : %d", data.device_id);
     LOG_INFO(TAG, "Name        : %s", data.device_name);
     LOG_INFO(TAG, "Firmware    : %s", data.firmware);
-    LOG_INFO(TAG, "%-12s: %.2f (%s)", data.capability_name, data.capability_value, data.capability_valid ? "OK" : "ERROR");
+    for(size_t i = 0;i < data.capability_count;i++)
+        LOG_INFO(TAG, "%-12s: %.2f (%s)", data.capabilities[i].name, data.capabilities[i].value, data.capabilities[i].valid ? "OK" : "ERROR");
     LOG_INFO(TAG, "Uptime      : %lu s", data.uptime);
     LOG_INFO(TAG, "RSSI        : %d dBm", data.rssi);
     LOG_INFO(TAG, "==============================");

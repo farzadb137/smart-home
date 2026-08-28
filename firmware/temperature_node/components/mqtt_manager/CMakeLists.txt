@@ -11,4 +11,5 @@ idf_component_register(
         topic_manager
         command_manager
         ota_manager
+        time_manager
 )
