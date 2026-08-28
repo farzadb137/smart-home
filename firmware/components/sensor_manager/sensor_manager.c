@@ -1,18 +1,11 @@
 #include "sensor_manager.h"
 
 #include "logger.h"
-#include "ds18b20.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "esp_system.h"
 
 #include <string.h>
-
-/* Physical pin the temperature probe is wired to. Node-specific - a
- * future switch/door-sensor build defines its own driver(s) with their
- * own GPIO constants instead of this one. */
-#define TEMPERATURE_GPIO 18
 
 #define CAPABILITY_POLL_PERIOD_MS 5000
 
@@ -23,27 +16,6 @@ static capability_t values[CAPABILITY_MAX];
 static size_t driver_count = 0;
 
 static TaskHandle_t sensor_task_handle;
-
-/*==========================================================
- * Temperature capability driver (ds18b20)
- *=========================================================*/
-
-static esp_err_t temperature_driver_init(void){
-    return ds18b20_init(TEMPERATURE_GPIO);
-}
-
-static bool temperature_driver_read(float *value){
-    return ds18b20_read_temperature(value);
-}
-
-static const capability_driver_t temperature_driver = {
-    .name = "temperature",
-    .type = CAP_TYPE_NUMERIC,
-    .access = CAP_ACCESS_READ,
-    .init = temperature_driver_init,
-    .read = temperature_driver_read,
-    .write = NULL
-};
 
 /*==========================================================
  * Private Functions
@@ -118,14 +90,14 @@ void sensor_manager_init(void){
     driver_count = 0;
     memset(values, 0, sizeof(values));
 
-    /* This node build exposes one capability: temperature. A future
-     * switch or door-sensor build registers its own driver(s) here
-     * instead. */
-    sensor_manager_register(&temperature_driver);
-
-    LOG_INFO(TAG, "Sensor manager initialized with %d capability driver(s)", (int)driver_count);
+    /* Deliberately registers nothing itself - this component is shared
+     * across every node type now. Each node's main/capability_drivers.c
+     * calls sensor_manager_register() for whatever hardware that
+     * specific product actually has, right after this returns. */
 
     xTaskCreate(sensor_task, "sensor_task", 4096, NULL, 5, &sensor_task_handle);
+
+    LOG_INFO(TAG, "Sensor manager initialized (generic registry)");
 
 }
 

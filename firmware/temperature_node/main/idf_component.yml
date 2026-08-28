@@ -17,3 +17,4 @@ dependencies:
   espressif/cjson: '*'
   espressif/mqtt: '*'
   espressif/led_strip: ^3.0.3
+  espressif/mdns: '*'

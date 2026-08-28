@@ -10,6 +10,7 @@
 #include "time_manager.h"
 #include "mqtt_manager.h"
 #include "app_manager.h"
+#include "capability_drivers.h"
 
 void app_main(void){
 
@@ -27,13 +28,14 @@ void app_main(void){
     button_manager_init();
 
     // 5. Static information
-    device_info_init();
+    device_info_init(DEVICE_TYPE_TEMPERATURE, "SmartTemp-V1.0", "0.5.0");
 
     // 6. System information
     system_info_init();
 
     // 7. Hardware
     sensor_manager_init();
+    capability_drivers_register();
 
     if(config_manager_is_provisioned()){
 

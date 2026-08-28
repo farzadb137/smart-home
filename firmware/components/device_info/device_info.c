@@ -11,7 +11,7 @@ static device_info_t device_info;
  * Public Functions
  *=========================================================*/
 
-void device_info_init(void){
+void device_info_init(device_type_t type, const char *model, const char *firmware){
 
     const app_config_t *config = config_manager_get();
 
@@ -21,9 +21,9 @@ void device_info_init(void){
     device_info = (device_info_t){
         .id = ((uint64_t)mac[0] << 40) | ((uint64_t)mac[1] << 32) | ((uint64_t)mac[2] << 24) | ((uint64_t)mac[3] << 16) | ((uint64_t)mac[4] << 8) | ((uint64_t)mac[5]),
         .manufacturer = "BSM",
-        .type = DEVICE_TYPE_TEMPERATURE,
-        .model = "SmartTemp-V1.0",
-        .firmware = "0.4.0",
+        .type = type,
+        .model = model,
+        .firmware = firmware,
         .hardware = "Rev A",
         .name = ""
     };
@@ -47,13 +47,21 @@ const char *device_type_to_string(device_type_t type){
 
 }
 
+const char *device_type_to_setup_prefix(device_type_t type){
+
+    switch(type){
+        case DEVICE_TYPE_TEMPERATURE:   return "SmartTemp";
+        case DEVICE_TYPE_SWITCH:        return "SmartSwitch";
+        case DEVICE_TYPE_DOOR_SENSOR:   return "SmartDoor";
+        default:                        return "SmartDevice";
+    }
+
+}
+
 void device_info_get_id_hex(char *out, size_t out_size){
  
     const device_info_t *info = device_info_get();
  
-    /* mask to 48 bits, zero-padded so the string length is always fixed
-     * (a leading-zero ID must not silently produce a shorter string, or
-     * downstream ACL/topic matching gets subtle and hard-to-debug bugs) */
     snprintf(out, out_size, "%012llX", (unsigned long long)(info->id & 0xFFFFFFFFFFFFULL));
  
 }
