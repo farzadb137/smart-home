@@ -5,21 +5,25 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-#include <stdbool.h>
-
-
-typedef struct{
-    float temperature;
-    uint32_t timestamp;
-    bool valid;
-}sensor_data_t;
-
+#include "capability.h"
+#include "esp_err.h"
+#include <stddef.h>
 
 
 void sensor_manager_init(void);
-const sensor_data_t *sensor_manager_get_data(void);
 
+/* Registers one capability driver. Called internally by sensor_manager_init()
+ * for whichever capabilities this node build provides. */
+esp_err_t sensor_manager_register(const capability_driver_t *driver);
+
+/* Fills 'out' with up to 'max' currently registered capabilities and
+ * returns how many were written. Used by telemetry_manager. */
+size_t sensor_manager_get_capabilities(capability_t *out, size_t max);
+
+/* Commands a writable capability (e.g. a switch) to a new value.
+ * Not called anywhere yet - wired up in Phase 2 once an actuator
+ * node and its command_manager handler exist. */
+esp_err_t sensor_manager_set_capability(const char *name, float value);
 
 
 #ifdef __cplusplus

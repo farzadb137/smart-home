@@ -5,4 +5,5 @@ idf_component_register(
         logger
         lwip
         esp_netif
+        cjson
 )

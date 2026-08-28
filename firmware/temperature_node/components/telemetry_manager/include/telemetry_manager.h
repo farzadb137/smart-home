@@ -1,7 +1,10 @@
 #ifndef TELEMETRY_MANAGER_H
 #define TELEMETRY_MANAGER_H
 
+#include "capability.h"
+
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <time.h>
 
@@ -11,9 +14,8 @@ typedef struct{
     char device_name[32];
     char device_type[32];
     char firmware[16];
-    char capability_name[16];
-    float capability_value;
-    bool capability_valid;
+    capability_t capabilities[CAPABILITY_MAX];
+    size_t capability_count;
     uint32_t uptime;
     int rssi;
     time_t timestamp;
