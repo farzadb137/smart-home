@@ -1,5 +1,6 @@
 import { CAPABILITY_ICONS, DEFAULT_ICON } from "../icons.js";
 import { formatDeviceName } from "../utils.js";
+import { sendDeviceCommand } from "../api.js";
 
 const CAPABILITY_FORMATTERS = {
     temperature: (value) => value == null ? "--" : `${Number(value).toFixed(1)} °C`,
@@ -22,14 +23,11 @@ function formatCapabilityValue(capability, value) {
 function renderControl(device, capability) {
     const value = device.readings?.[capability]?.value;
 
-    // Actuator capabilities get a toggle - disabled for now since
-    // there's no command channel wired up yet (that's a later phase,
-    // once real switch/actuator hardware exists). It still reflects
-    // the device's last known state, just can't be operated yet.
     if (capability === "switch") {
+        const disabled = !device.online;
         return `
-            <label class="device-toggle" title="Control coming soon">
-                <input type="checkbox" disabled ${value ? "checked" : ""}>
+            <label class="device-toggle" title="${disabled ? "Device offline" : ""}">
+                <input type="checkbox" ${value ? "checked" : ""} ${disabled ? "disabled" : ""}>
                 <span class="device-toggle-slider"></span>
             </label>
         `;
@@ -66,5 +64,29 @@ export function renderDevices(devices) {
         `;
 
         container.append(card);
+
+        const toggleInput = card.querySelector(".device-toggle input");
+        if (toggleInput) {
+            toggleInput.addEventListener("change", async (event) => {
+                const newValue = event.target.checked ? 1 : 0;
+                event.target.disabled = true;
+                try {
+                    const result = await sendDeviceCommand(device.hardware_id_hex, "set_capability", { name: "switch", value: newValue });
+                    if (result.success) {
+                        if (device.readings?.switch)
+                            device.readings.switch.value = newValue;
+                    }
+                    else {
+                        console.error("Command rejected:", result.error);
+                        event.target.checked = !event.target.checked;
+                    }
+                } catch (error) {
+                    console.error("Command failed:", error);
+                    event.target.checked = !event.target.checked;
+                } finally {
+                    event.target.disabled = false;
+                }
+            });
+        }
     });
 }

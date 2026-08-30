@@ -66,6 +66,15 @@ void device_info_get_id_hex(char *out, size_t out_size){
  
 }
 
+void device_info_sync_name(void){
+
+    const app_config_t *config = config_manager_get();
+
+    strncpy((char *)device_info.name, config->device_name, sizeof(device_info.name) - 1);
+    device_info.name[sizeof(device_info.name) - 1] = '\0';
+
+}
+
 void device_info_print(void){
 
     const device_info_t *info = device_info_get();

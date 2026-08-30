@@ -23,7 +23,7 @@ void app_main(void){
 
     button_manager_init();
 
-    device_info_init(DEVICE_TYPE_SWITCH, "SmartSwitch-V1.0", "0.5.0");
+    device_info_init(DEVICE_TYPE_SWITCH, "SmartSwitch-V1.0", "0.5.1");
 
     system_info_init();
 

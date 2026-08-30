@@ -255,3 +255,61 @@ def set_user_password(username, password_hash):
 		)
 	connection.commit()
 	connection.close()
+
+def get_device_history(hardware_id, capability, range_key):
+	now = datetime.now(timezone.utc)
+	connection = get_connection()
+
+	if range_key == "24h":
+		cutoff = (now - timedelta(hours=24)).isoformat()
+		rows = connection.execute(
+			"""
+			SELECT timestamp, value AS value_avg, value AS value_min, value AS value_max
+			FROM readings
+			WHERE device_id=(SELECT id FROM devices WHERE hardware_id=?)
+			  AND capability=? AND timestamp >= ? AND valid=1
+			ORDER BY timestamp ASC
+			""",
+			(hardware_id, capability, cutoff)
+			).fetchall()
+
+	elif range_key == "7d":
+		cutoff = (now - timedelta(days=7)).isoformat()
+		# Query-time hourly bucketing - readings_hourly only covers data
+		# past the retention/rollup cutoff, so recent raw readings need
+		# bucketing on the fly here to keep the point count reasonable
+		# (a week of ~10s telemetry is ~60k raw rows - too many to chart
+		# directly on modest hardware).
+		rows = connection.execute(
+			"""
+			SELECT
+				strftime('%Y-%m-%dT%H:00:00', timestamp) AS timestamp,
+				AVG(value) AS value_avg, MIN(value) AS value_min, MAX(value) AS value_max
+			FROM readings
+			WHERE device_id=(SELECT id FROM devices WHERE hardware_id=?)
+			  AND capability=? AND timestamp >= ? AND valid=1
+			GROUP BY timestamp
+			ORDER BY timestamp ASC
+			""",
+			(hardware_id, capability, cutoff)
+			).fetchall()
+
+	elif range_key == "30d":
+		cutoff = (now - timedelta(days=30)).isoformat()
+		rows = connection.execute(
+			"""
+			SELECT hour_start AS timestamp, value_avg, value_min, value_max
+			FROM readings_hourly
+			WHERE device_id=(SELECT id FROM devices WHERE hardware_id=?)
+			  AND capability=? AND hour_start >= ?
+			ORDER BY hour_start ASC
+			""",
+			(hardware_id, capability, cutoff)
+			).fetchall()
+
+	else:
+		connection.close()
+		return None
+
+	connection.close()
+	return [dict(row) for row in rows]

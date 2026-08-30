@@ -32,6 +32,7 @@ const device_info_t *device_info_get(void);
 const char *device_type_to_string(device_type_t type);
 void device_info_get_id_hex(char *out, size_t out_size);
 const char *device_type_to_setup_prefix(device_type_t type);
+void device_info_sync_name(void);
 void device_info_print(void);
 
 #ifdef __cplusplus
