@@ -1,24 +1,7 @@
 import { CAPABILITY_ICONS, DEFAULT_ICON } from "../icons.js";
 import { formatDeviceName } from "../utils.js";
 import { sendDeviceCommand } from "../api.js";
-
-const CAPABILITY_FORMATTERS = {
-    temperature: (value) => value == null ? "--" : `${Number(value).toFixed(1)} °C`,
-    switch: (value) => value ? "On" : "Off",
-    contact: (value) => value ? "Open" : "Closed",
-};
-
-function getPrimaryCapability(device) {
-    const capabilities = Object.keys(device.readings || {});
-    return capabilities.length > 0 ? capabilities[0] : null;
-}
-
-function formatCapabilityValue(capability, value) {
-    const formatter = CAPABILITY_FORMATTERS[capability];
-    if (formatter)
-        return formatter(value);
-    return value == null ? "--" : String(value);
-}
+import { formatCapabilityValue, getPrimaryCapability } from "../capabilities.js";
 
 function renderControl(device, capability) {
     const value = device.readings?.[capability]?.value;
