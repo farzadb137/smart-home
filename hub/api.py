@@ -2,8 +2,14 @@ import os
 import secrets
 import time
 import threading
+import queue
 import subprocess
 import re
+import paho.mqtt.client as mqtt
+import json
+import hashlib
+import struct
+from werkzeug.utils import secure_filename
 
 from datetime import timedelta
 from functools import wraps
@@ -11,12 +17,21 @@ from functools import wraps
 from flask import Flask, jsonify, request, send_from_directory, session
 from werkzeug.security import check_password_hash
 
-from config import MQTT_URI_FOR_DEVICES, MOSQUITTO_PASSWD_FILE
-from database import get_connection, get_latest_readings, get_user, get_or_create_device
+from config import (
+	BROKER_HOST, BROKER_PORT,
+	HUB_COMMANDER_USERNAME, HUB_COMMANDER_PASSWORD,
+	COMMAND_RESPONSE_TIMEOUT_SEC,
+	FIRMWARE_BASE_URL
+)
+from database import (
+	get_connection, get_latest_readings,
+	get_user, get_or_create_device, get_device_history
+)
 
 FIRMWARE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "firmware")
 SECRET_KEY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".flask_secret_key")
 
+VALID_HISTORY_RANGES = {"24h", "7d", "30d"}
 
 def _load_or_create_secret_key():
 	if os.path.exists(SECRET_KEY_PATH):
@@ -36,13 +51,85 @@ app.config.update(
 	SESSION_COOKIE_SAMESITE="Lax",
 	PERMANENT_SESSION_LIFETIME=timedelta(days=30)
 	)
+app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024  # generous ceiling for an ESP32 app image
+
+APP_DESC_MAGIC = 0xABCD5432
+APP_DESC_OFFSET = 0x20  # sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)
+
+def parse_firmware_description(binary_data):
+	# Reads the fixed-offset esp_app_desc_t header ESP-IDF embeds in every
+	# app image, instead of trusting a hand-typed version string - removes
+	# the whole class of "uploaded v2, form still said v1" mistakes.
+	if len(binary_data) < APP_DESC_OFFSET + 0x50:
+		return None
+
+	magic = struct.unpack_from("<I", binary_data, APP_DESC_OFFSET)[0]
+	if magic != APP_DESC_MAGIC:
+		return None
+
+	version_bytes = binary_data[APP_DESC_OFFSET + 0x10 : APP_DESC_OFFSET + 0x10 + 32]
+	project_bytes = binary_data[APP_DESC_OFFSET + 0x30 : APP_DESC_OFFSET + 0x30 + 32]
+
+	version = version_bytes.split(b"\x00", 1)[0].decode("utf-8", errors="replace")
+	project_name = project_bytes.split(b"\x00", 1)[0].decode("utf-8", errors="replace")
+
+	return {"version": version, "project_name": project_name}
 
 CLAIM_CODE_CHARSET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"  # no 0/O/1/l/I - typed by hand
 CLAIM_CODE_LENGTH = 6
 CLAIM_WINDOW_SECONDS = 120
 
-_pending_claims = {}
-_claims_lock = threading.Lock()
+# A second, independent MQTT client (separate from the collector's) using
+# the hub_commander account - scoped by ACL to command/response topics
+# only, matching the boundary already documented in /etc/mosquitto/acl.
+_pending_responses = {}
+_pending_lock = threading.Lock()
+
+def _on_commander_connect(client, userdata, flags, reason_code, properties):
+	print(f"[MQTT-CMD] Connected: {reason_code}")
+	client.subscribe("home/devices/+/response")
+
+def _on_commander_message(client, userdata, message):
+	parts = message.topic.split("/")
+	if len(parts) != 4:
+		return
+	hardware_id_hex = parts[2]
+	with _pending_lock:
+		response_queue = _pending_responses.get(hardware_id_hex)
+	if response_queue is not None:
+		try:
+			response_queue.put_nowait(message.payload.decode())
+		except queue.Full:
+			pass
+
+_commander = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+_commander.username_pw_set(HUB_COMMANDER_USERNAME, HUB_COMMANDER_PASSWORD)
+_commander.on_connect = _on_commander_connect
+_commander.on_message = _on_commander_message
+_commander.connect(BROKER_HOST, BROKER_PORT, 60)
+_commander.loop_start()
+
+def send_device_command(hardware_id_hex, command_payload):
+	# NOTE: correlates a response to a request by device ID only - there's
+	# no per-request ID in the command protocol today. Fine for a single-
+	# operator dashboard; would need a real request ID if ever called
+	# concurrently for the same device (see design notes).
+	response_queue = queue.Queue(maxsize=1)
+	with _pending_lock:
+		_pending_responses[hardware_id_hex] = response_queue
+
+	try:
+		topic = f"home/devices/{hardware_id_hex}/command"
+		_commander.publish(topic, json.dumps(command_payload), qos=1)
+
+		try:
+			raw = response_queue.get(timeout=COMMAND_RESPONSE_TIMEOUT_SEC)
+			return True, json.loads(raw)
+		except queue.Empty:
+			return False, {"error": "Device did not respond in time"}
+	finally:
+		with _pending_lock:
+			_pending_responses.pop(hardware_id_hex, None)
 
 def _generate_claim_code():
 	return "".join(secrets.choice(CLAIM_CODE_CHARSET) for _ in range(CLAIM_CODE_LENGTH))
@@ -121,6 +208,7 @@ def _serialize_device(row, readings):
 	return {
 		"id": row["id"],
 		"hardware_id": row["hardware_id"],
+		"hardware_id_hex": f"{row['hardware_id']:012X}",
 		"name": row["device_name"],
 		"type": row["device_type"],
 		"manufacturer": row["manufacturer"],
@@ -158,25 +246,33 @@ def get_devices():
 		for row in rows
 		])
 
-@app.route("/api/devices/<device_name>")
+@app.route("/api/devices/<hardware_id_hex>")
 @login_required
-def get_device(device_name):
+def get_device(hardware_id_hex):
+	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+		return jsonify({"error": "Invalid device ID"}), 400
+
 	connection = get_connection()
 	row = connection.execute(
-		_DEVICE_QUERY + " WHERE devices.device_name=?",
-		(device_name,)
+		_DEVICE_QUERY + " WHERE devices.hardware_id=?",
+		(int(hardware_id_hex, 16),)
 		).fetchone()
 	connection.close()
+
 	if row is None:
 		return jsonify({"error": "Device not found"}), 404
 
 	readings = get_latest_readings([row["id"]]).get(row["id"], {})
 	return jsonify(_serialize_device(row, readings))
 
-@app.route("/api/devices/<device_name>/telemetry")
+@app.route("/api/devices/<hardware_id_hex>/telemetry")
 @login_required
-def get_telemetry(device_name):
+def get_telemetry(hardware_id_hex):
+	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+		return jsonify({"error": "Invalid device ID"}), 400
+
 	capability = request.args.get("capability")
+	hardware_id = int(hardware_id_hex, 16)
 
 	connection = get_connection()
 	if capability:
@@ -185,10 +281,10 @@ def get_telemetry(device_name):
 			SELECT readings.timestamp, readings.capability, readings.value, readings.rssi, readings.uptime
 			FROM readings
 			JOIN devices ON devices.id = readings.device_id
-			WHERE devices.device_name=? AND readings.capability=?
+			WHERE devices.hardware_id=? AND readings.capability=?
 			ORDER BY readings.timestamp DESC LIMIT 100
 			""",
-			(device_name, capability)
+			(hardware_id, capability)
 			).fetchall()
 	else:
 		rows = connection.execute(
@@ -196,10 +292,10 @@ def get_telemetry(device_name):
 			SELECT readings.timestamp, readings.capability, readings.value, readings.rssi, readings.uptime
 			FROM readings
 			JOIN devices ON devices.id = readings.device_id
-			WHERE devices.device_name=?
+			WHERE devices.hardware_id=?
 			ORDER BY readings.timestamp DESC LIMIT 100
 			""",
-			(device_name,)
+			(hardware_id,)
 			).fetchall()
 	connection.close()
 
@@ -213,6 +309,102 @@ def get_telemetry(device_name):
 			}
 		for row in rows
 		])
+
+@app.route("/api/devices/<hardware_id_hex>/command", methods=["POST"])
+@login_required
+def send_command(hardware_id_hex):
+	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+		return jsonify({"error": "Invalid device ID"}), 400
+
+	hardware_id_hex = hardware_id_hex.upper()
+
+	connection = get_connection()
+	row = connection.execute(
+		"SELECT id FROM devices WHERE hardware_id=?",
+		(int(hardware_id_hex, 16),)
+		).fetchone()
+	connection.close()
+
+	if row is None:
+		return jsonify({"error": "Device not found"}), 404
+
+	payload = request.get_json(silent=True) or {}
+	command = payload.get("command")
+	if not command:
+		return jsonify({"error": "Missing 'command'"}), 400
+
+	command_payload = {"command": command}
+	if "data" in payload:
+		command_payload["data"] = payload["data"]
+
+	ok, response = send_device_command(hardware_id_hex, command_payload)
+
+	if not ok:
+		return jsonify({"success": False, "error": response.get("error", "Command failed")}), 504
+
+	return jsonify(response)
+
+@app.route("/api/devices/<hardware_id_hex>/rename", methods=["POST"])
+@login_required
+def rename_device(hardware_id_hex):
+	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+		return jsonify({"error": "Invalid device ID"}), 400
+
+	payload = request.get_json(silent=True) or {}
+	new_name = (payload.get("name") or "").strip()
+
+	if not new_name:
+		return jsonify({"success": False, "error": "Name cannot be empty"}), 400
+	if len(new_name) > 31:  # firmware's device_name field is char[32] (31 chars + null)
+		return jsonify({"success": False, "error": "Name must be 31 characters or fewer"}), 400
+
+	command_payload = {"command": "set_config", "data": {"device_name": new_name}}
+	ok, response = send_device_command(hardware_id_hex.upper(), command_payload)
+
+	if not ok:
+		return jsonify({"success": False, "error": response.get("error", "Rename failed")}), 504
+
+	return jsonify(response)
+
+@app.route("/api/devices/<hardware_id_hex>/firmware", methods=["POST"])
+@login_required
+def upload_firmware(hardware_id_hex):
+	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+		return jsonify({"error": "Invalid device ID"}), 400
+
+	if "firmware" not in request.files:
+		return jsonify({"success": False, "error": "No firmware file provided"}), 400
+
+	binary_data = request.files["firmware"].read()
+
+	description = parse_firmware_description(binary_data)
+	if description is None:
+		return jsonify({"success": False, "error": "Not a valid ESP-IDF firmware image (app description header not found)"}), 400
+
+	sha256_hex = hashlib.sha256(binary_data).hexdigest()
+
+	filename = secure_filename(f"{description['project_name']}_{description['version']}.bin")
+	os.makedirs(FIRMWARE_DIR, exist_ok=True)
+	with open(os.path.join(FIRMWARE_DIR, filename), "wb") as f:
+		f.write(binary_data)
+
+	url = f"{FIRMWARE_BASE_URL}/firmware/{filename}"
+
+	command_payload = {
+		"command": "ota_update",
+		"data": {"url": url, "version": description["version"], "sha256": sha256_hex}
+		}
+
+	ok, response = send_device_command(hardware_id_hex.upper(), command_payload)
+
+	if not ok:
+		return jsonify({"success": False, "error": response.get("error", "Device did not acknowledge the update")}), 504
+
+	response.setdefault("data", {})
+	response["data"]["version"] = description["version"]
+	response["data"]["project_name"] = description["project_name"]
+
+	return jsonify(response)
 
 @app.route("/firmware/<path:filename>")
 def get_firmware(filename):
@@ -273,6 +465,28 @@ def provision_claim():
 @app.route("/add-device")
 def add_device_page():
 	return app.send_static_file("add-device.html")
+
+@app.route("/api/devices/<hardware_id_hex>/history")
+@login_required
+def get_history(hardware_id_hex):
+	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+		return jsonify({"error": "Invalid device ID"}), 400
+
+	capability = request.args.get("capability")
+	range_key = request.args.get("range", "24h")
+
+	if not capability:
+		return jsonify({"error": "Missing 'capability'"}), 400
+	if range_key not in VALID_HISTORY_RANGES:
+		return jsonify({"error": f"Invalid range, must be one of {sorted(VALID_HISTORY_RANGES)}"}), 400
+
+	hardware_id = int(hardware_id_hex, 16)
+	history = get_device_history(hardware_id, capability, range_key)
+
+	if history is None:
+		return jsonify({"error": "Failed to fetch history"}), 500
+
+	return jsonify(history)
 
 if __name__ == "__main__":
 	app.run(host="0.0.0.0", port=5000, ssl_context=("/home/farzad/iot/certs/api.crt", "/home/farzad/iot/certs/api.key"))

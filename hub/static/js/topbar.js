@@ -20,8 +20,9 @@ export function renderTopbar(userName) {
         return;
 
     const now = new Date();
+    const namePart = userName ? `, ${userName}` : "";
 
-    greetingEl.textContent = `${getGreeting(now)}, ${userName}`;
+    greetingEl.textContent = `${getGreeting(now)}, ${namePart}`;
     dateEl.textContent = now.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
     timeEl.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }

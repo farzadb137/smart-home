@@ -1,4 +1,5 @@
 export const appState = {
     devices: [],
-    apiOnline: false
+    apiOnline: false,
+    userName: ""
 };

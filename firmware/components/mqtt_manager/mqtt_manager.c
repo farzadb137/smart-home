@@ -28,7 +28,9 @@ extern const uint8_t ca_cert_pem_end[]   asm("_binary_mqtt_ca_cert_pem_end");
 
 static void mqtt_command_response(const char *payload){
 
-    mqtt_manager_publish(topic_manager_get_response(), payload, 1, false);
+    esp_err_t err = mqtt_manager_publish(topic_manager_get_response(), payload, 1, false);
+    if(err != ESP_OK)
+        LOG_WARN(TAG, "Failed to publish command response: %s", esp_err_to_name(err));
 
 }
 

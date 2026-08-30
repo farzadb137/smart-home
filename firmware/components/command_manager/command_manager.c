@@ -183,8 +183,10 @@ static void handle_set_config(cJSON *root){
     cJSON *telemetry_interval = cJSON_GetObjectItem(data, "telemetry_interval_sec");
 
     if(name && cJSON_IsString(name))
-        if(config_manager_update_device_name(name->valuestring) == ESP_OK)
+        if(config_manager_update_device_name(name->valuestring) == ESP_OK){
             device_name_updated = true;
+            device_info_sync_name();
+        }
 
     if(telemetry_interval && cJSON_IsNumber(telemetry_interval))
         if(config_manager_update_telemetry_interval((uint32_t)telemetry_interval->valuedouble) == ESP_OK)

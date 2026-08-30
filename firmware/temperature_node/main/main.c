@@ -28,7 +28,7 @@ void app_main(void){
     button_manager_init();
 
     // 5. Static information
-    device_info_init(DEVICE_TYPE_TEMPERATURE, "SmartTemp-V1.0", "0.5.0");
+    device_info_init(DEVICE_TYPE_TEMPERATURE, "SmartTemp-V1.0", "0.5.1");
 
     // 6. System information
     system_info_init();
