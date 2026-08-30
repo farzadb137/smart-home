@@ -2,17 +2,7 @@ import { renameDevice, uploadFirmware, sendDeviceCommand } from "../api.js";
 import { fetchDeviceHistory, renderHistoryChart } from "../history.js";
 import { formatDeviceName, formatRelativeTime } from "../utils.js";
 import { CAPABILITY_ICONS, DEFAULT_ICON } from "../icons.js";
-
-const CAPABILITY_FORMATTERS = {
-    temperature: (value) => value == null ? "--" : `${Number(value).toFixed(1)} °C`,
-    switch: (value) => value ? "On" : "Off",
-    contact: (value) => value ? "Open" : "Closed",
-};
-
-function formatValue(capability, value) {
-    const formatter = CAPABILITY_FORMATTERS[capability];
-    return formatter ? formatter(value) : (value == null ? "--" : String(value));
-}
+import { formatCapabilityValue } from "../capabilities.js";
 
 let activeChart = null;
 
@@ -104,7 +94,7 @@ function renderCapabilityCards(device, capabilities) {
                 <span class="device-card-icon">${icon}</span>
             </div>
             <strong class="device-card-name">${name}</strong>
-            <div class="device-card-value" id="cap-value-${name}">${formatValue(name, reading.value)}</div>
+            <div class="device-card-value" id="cap-value-${name}">${formatCapabilityValue(name, reading.value)}</div>
         `;
 
         if (name === "switch") {
@@ -256,6 +246,6 @@ export function updateDeviceDetailValues(device) {
             return;
         const el = document.getElementById(`cap-value-${name}`);
         if (el)
-            el.textContent = formatValue(name, reading.value);
+            el.textContent = formatCapabilityValue(name, reading.value);
     });
 }

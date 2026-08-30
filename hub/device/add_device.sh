@@ -1,4 +1,16 @@
 #!/bin/bash
+# ============================================================
+# EMERGENCY / MANUAL FALLBACK ONLY.
+#
+# Normal device onboarding goes through the dashboard's "Add Device"
+# flow (/add-device -> claim code -> device self-provisions over
+# HTTPS). See api.py's /api/provision/start and /api/provision/claim
+# routes - that's the authoritative path as of Phase 1.
+#
+# This script exists only as a manual escape hatch for the case where
+# the dashboard/API itself is broken but you still have SSH access to
+# the hub and need to issue MQTT credentials directly.
+# ============================================================
 # Usage: ./add_device.sh <device_id_hex>
 #
 # <device_id_hex> is the device's own hardware-derived identity - the SAME

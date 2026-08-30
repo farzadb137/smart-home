@@ -6,6 +6,7 @@ After=iot-collector.service
 Type=oneshot
 User=farzad
 Group=farzad
+EnvironmentFile=/etc/iot/secrets.env
 WorkingDirectory=/home/farzad/iot/collector
 ExecStart=/home/farzad/iot/collector/.venv/bin/python3 /home/farzad/iot/collector/hub_maintenance.py
 

@@ -1,29 +1,21 @@
 [Unit]
 Description=IoT Hub - MQTT Collector
-# Ordering only - mosquitto must be up first, but if mosquitto later
-# restarts/crashes we don't want that to cascade-kill the collector.
-# The collector's own MQTT client already handles reconnect.
 After=network-online.target mosquitto.service
 Wants=network-online.target mosquitto.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 Type=simple
 User=farzad
 Group=farzad
+EnvironmentFile=/etc/iot/secrets.env
 WorkingDirectory=/home/farzad/iot/collector
 ExecStart=/home/farzad/iot/collector/.venv/bin/python3 /home/farzad/iot/collector/mqtt_collector.py
 
-# Restart policy: retry on failure, but don't thrash forever.
-# If it fails 5 times within 60s, systemd stops trying and marks the
-# unit 'failed' - visible via `systemctl status`, instead of an
-# invisible multi-hundred-restart loop like we just saw.
 Restart=on-failure
 RestartSec=5
-StartLimitIntervalSec=60
-StartLimitBurst=5
 
-# Basic hardening - this process doesn't need elevated privileges
-# or access outside its own working directory.
 NoNewPrivileges=yes
 PrivateTmp=yes
 

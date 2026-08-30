@@ -1,21 +1,6 @@
 import { CAPABILITY_ICONS, DEFAULT_ICON } from "../icons.js";
 import { formatDeviceName } from "../utils.js";
-
-const CAPABILITY_FORMATTERS = {
-    temperature: (value) => value == null ? "--" : `${Number(value).toFixed(1)} °C`,
-    switch: (value) => value ? "On" : "Off",
-    contact: (value) => value ? "Open" : "Closed",
-};
-
-function formatValue(capability, value) {
-    const formatter = CAPABILITY_FORMATTERS[capability];
-    return formatter ? formatter(value) : (value == null ? "--" : String(value));
-}
-
-function getPrimaryCapability(device) {
-    const capabilities = Object.keys(device.readings || {});
-    return capabilities.length > 0 ? capabilities[0] : null;
-}
+import { formatCapabilityValue, getPrimaryCapability } from "../capabilities.js";
 
 export function renderDeviceList(container, devices) {
     if (!container)
@@ -44,7 +29,7 @@ export function renderDeviceList(container, devices) {
             </div>
             <strong class="device-card-name">${formatDeviceName(device.name)}</strong>
             <small class="device-card-subtitle">${device.online ? "Online" : "Offline"}</small>
-            ${capability ? `<div class="device-card-value">${formatValue(capability, device.readings?.[capability]?.value)}</div>` : ""}
+            ${capability ? `<div class="device-card-value">${formatCapabilityValue(capability, device.readings?.[capability]?.value)}</div>` : ""}
         `;
 
         grid.append(card);
