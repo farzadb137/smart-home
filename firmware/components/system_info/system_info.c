@@ -31,7 +31,7 @@ void system_info_init(void){
         case CHIP_ESP32C5:      system_info.chip_model = "ESP32-C5";    break;
         case CHIP_ESP32H21:     system_info.chip_model = "ESP32-H21";   break;
         case CHIP_ESP32H4:      system_info.chip_model = "ESP32-H4";    break;
-        default:                system_info.reset_reason = "Other";     break;
+        default:                system_info.chip_model = "Other";     break;
     }
 
     switch(esp_reset_reason()){
