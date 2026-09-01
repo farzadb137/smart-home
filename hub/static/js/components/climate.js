@@ -6,9 +6,6 @@ let currentChart = null;
 let currentRange = "24h";
 let currentHardwareId = null;
 
-// Fixed visual range for the gauge - not a real thermostat setpoint,
-// just a sensible band for an indoor/ambient sensor reading. Tell me if
-// your real-world readings sit outside this and I'll adjust it.
 const GAUGE_MIN = 10;
 const GAUGE_MAX = 35;
 const GAUGE_SWEEP_DEG = 300; // 360 - 60deg gap, centered at the bottom
@@ -153,9 +150,11 @@ export function renderClimate(data) {
         statusDot.style.backgroundColor = "var(--color-danger)";
     }
 
-    if (data.hardwareId && data.hardwareId !== currentHardwareId) {
-        currentHardwareId = data.hardwareId;
-        wireRangeButtons(data.hardwareId);
+    if (data.hardwareId) {
+        if (data.hardwareId !== currentHardwareId) {
+            currentHardwareId = data.hardwareId;
+            wireRangeButtons(data.hardwareId);
+        }
         loadAndRenderHistory(data.hardwareId, currentRange);
     }
 }

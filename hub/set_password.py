@@ -1,10 +1,8 @@
 import getpass
 from werkzeug.security import generate_password_hash
-from database import migrate_database, set_user_password
+from database import set_user_password
 
 def main():
-	migrate_database()
-
 	username = input("Username: ").strip()
 	password = getpass.getpass("Password: ")
 	confirm = getpass.getpass("Confirm password: ")

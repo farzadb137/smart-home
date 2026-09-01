@@ -1,37 +1,58 @@
-import os
-import secrets
-import time
-import threading
-import queue
-import subprocess
-import re
-import paho.mqtt.client as mqtt
-import json
 import hashlib
+import json
+import os
+import queue
+import re
+import secrets
 import struct
-from werkzeug.utils import secure_filename
-
+import subprocess
+import threading
+import time
 from datetime import timedelta
 from functools import wraps
 
+import paho.mqtt.client as mqtt
 from flask import Flask, jsonify, request, send_from_directory, session
 from werkzeug.security import check_password_hash
+from werkzeug.utils import secure_filename
 
 from config import (
-	BROKER_HOST, BROKER_PORT,
-	HUB_COMMANDER_USERNAME, HUB_COMMANDER_PASSWORD,
+	BROKER_HOST,
+	BROKER_PORT,
+	HUB_COMMANDER_USERNAME,
+	HUB_COMMANDER_PASSWORD,
 	COMMAND_RESPONSE_TIMEOUT_SEC,
 	FIRMWARE_BASE_URL
 )
 from database import (
-	get_connection, get_latest_readings,
-	get_user, get_or_create_device, get_device_history
+	get_connection,
+	get_latest_readings,
+	get_user,
+	get_user_by_id,
+	get_or_create_device,
+	get_device_history,
+	get_device_with_parent
 )
 
-FIRMWARE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "firmware")
-SECRET_KEY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".flask_secret_key")
+# ============================================================
+# Configuration / Constants
+# ============================================================
 
-VALID_HISTORY_RANGES = {"24h", "7d", "30d"}
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+FIRMWARE_DIR = os.path.join(BASE_DIR, "firmware")
+SECRET_KEY_PATH = os.path.join(BASE_DIR, ".flask_secret_key")
+
+VALID_HISTORY_RANGES = {"24h", "7d", "30d", "90d", "1y"}
+
+HARDWARE_ID_PATTERN = re.compile(r"^(?:[0-9A-Fa-f]{12}|[0-9A-Fa-f]{16})$")
+
+APP_DESC_MAGIC = 0xABCD5432
+APP_DESC_OFFSET = 0x20
+
+CLAIM_CODE_CHARSET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
+CLAIM_CODE_LENGTH = 6
+CLAIM_WINDOW_SECONDS = 120
 
 def _load_or_create_secret_key():
 	if os.path.exists(SECRET_KEY_PATH):
@@ -53,13 +74,7 @@ app.config.update(
 	)
 app.config['MAX_CONTENT_LENGTH'] = 4 * 1024 * 1024  # generous ceiling for an ESP32 app image
 
-APP_DESC_MAGIC = 0xABCD5432
-APP_DESC_OFFSET = 0x20  # sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)
-
 def parse_firmware_description(binary_data):
-	# Reads the fixed-offset esp_app_desc_t header ESP-IDF embeds in every
-	# app image, instead of trusting a hand-typed version string - removes
-	# the whole class of "uploaded v2, form still said v1" mistakes.
 	if len(binary_data) < APP_DESC_OFFSET + 0x50:
 		return None
 
@@ -75,25 +90,22 @@ def parse_firmware_description(binary_data):
 
 	return {"version": version, "project_name": project_name}
 
-CLAIM_CODE_CHARSET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"  # no 0/O/1/l/I - typed by hand
-CLAIM_CODE_LENGTH = 6
-CLAIM_WINDOW_SECONDS = 120
-
-# A second, independent MQTT client (separate from the collector's) using
-# the hub_commander account - scoped by ACL to command/response topics
-# only, matching the boundary already documented in /etc/mosquitto/acl.
 _pending_responses = {}
 _pending_lock = threading.Lock()
 
 def _on_commander_connect(client, userdata, flags, reason_code, properties):
 	print(f"[MQTT-CMD] Connected: {reason_code}")
 	client.subscribe("home/devices/+/response")
+	client.subscribe("home/devices/+/children/+/response")
 
 def _on_commander_message(client, userdata, message):
 	parts = message.topic.split("/")
-	if len(parts) != 4:
+	if len(parts) == 4:
+		hardware_id_hex = parts[2]
+	elif len(parts) == 6 and parts[3] == "children":
+		hardware_id_hex = parts[4]
+	else:
 		return
-	hardware_id_hex = parts[2]
 	with _pending_lock:
 		response_queue = _pending_responses.get(hardware_id_hex)
 	if response_queue is not None:
@@ -109,19 +121,16 @@ _commander.on_message = _on_commander_message
 _commander.connect(BROKER_HOST, BROKER_PORT, 60)
 _commander.loop_start()
 
-def send_device_command(hardware_id_hex, command_payload):
-	# NOTE: correlates a response to a request by device ID only - there's
-	# no per-request ID in the command protocol today. Fine for a single-
-	# operator dashboard; would need a real request ID if ever called
-	# concurrently for the same device (see design notes).
+def send_device_command(hardware_id_hex, command_payload, parent_hardware_id_hex=None):
 	response_queue = queue.Queue(maxsize=1)
 	with _pending_lock:
 		_pending_responses[hardware_id_hex] = response_queue
-
 	try:
-		topic = f"home/devices/{hardware_id_hex}/command"
+		if parent_hardware_id_hex:
+			topic = f"home/devices/{parent_hardware_id_hex}/children/{hardware_id_hex}/command"
+		else:
+			topic = f"home/devices/{hardware_id_hex}/command"
 		_commander.publish(topic, json.dumps(command_payload), qos=1)
-
 		try:
 			raw = response_queue.get(timeout=COMMAND_RESPONSE_TIMEOUT_SEC)
 			return True, json.loads(raw)
@@ -130,6 +139,14 @@ def send_device_command(hardware_id_hex, command_payload):
 	finally:
 		with _pending_lock:
 			_pending_responses.pop(hardware_id_hex, None)
+
+def _resolve_parent_hardware_id_hex(hardware_id_hex):
+	device = get_device_with_parent(int(hardware_id_hex, 16))
+	if device is None:
+		return False, None
+	if device["parent_hardware_id"] is None:
+		return True, None
+	return True, f"{device['parent_hardware_id']:012X}"
 
 def _generate_claim_code():
 	return "".join(secrets.choice(CLAIM_CODE_CHARSET) for _ in range(CLAIM_CODE_LENGTH))
@@ -141,9 +158,6 @@ def _cleanup_expired_claims():
 		del _pending_claims[code]
 
 def _provision_mqtt_credentials(username):
-	# Re-implements add_device.sh in Python so it can run from an API
-	# request instead of requiring SSH + manual invocation. Same tool,
-	# same file, same reload - just triggered differently.
 	password = secrets.token_urlsafe(18)
 
 	if os.path.exists(MOSQUITTO_PASSWD_FILE):
@@ -159,8 +173,14 @@ def _provision_mqtt_credentials(username):
 def login_required(view):
 	@wraps(view)
 	def wrapped(*args, **kwargs):
-		if not session.get("user_id"):
+		user_id = session.get("user_id")
+		if not user_id:
 			return jsonify({"error": "Authentication required"}), 401
+		user = get_user_by_id(user_id)
+		if user is None:
+			session.clear()
+			return jsonify({"error": "Authentication required"}), 401
+		session["username"] = user["username"]
 		return view(*args, **kwargs)
 	return wrapped
 
@@ -200,9 +220,15 @@ def logout():
 
 @app.route("/api/session")
 def session_status():
-	if session.get("user_id"):
-		return jsonify({"authenticated": True, "username": session.get("username")})
-	return jsonify({"authenticated": False})
+	user_id = session.get("user_id")
+	if not user_id:
+		return jsonify({"authenticated": False})
+	user = get_user_by_id(user_id)
+	if user is None:
+		session.clear()
+		return jsonify({"authenticated": False})
+	session["username"] = user["username"]
+	return jsonify({"authenticated": True, "username": user["username"]})
 
 def _serialize_device(row, readings):
 	return {
@@ -220,16 +246,22 @@ def _serialize_device(row, readings):
 		"online": bool(row["online"]),
 		"rssi": row["rssi"],
 		"uptime": row["uptime"],
-		"readings": readings
+		"readings": readings,
+		"parent_hardware_id_hex": f"{row['parent_hardware_id']:012X}" if row["parent_hardware_id"] is not None else None,
+		"parent_name": row["parent_device_name"]
 		}
 
 _DEVICE_QUERY = """
 	SELECT 
 		devices.id, devices.hardware_id, devices.device_name, devices.device_type,
 		devices.manufacturer, devices.model, devices.hardware, devices.firmware, devices.first_seen,
+		devices.parent_device_id,
+		parent.hardware_id AS parent_hardware_id,
+		parent.device_name AS parent_device_name,
 		device_status.last_seen, device_status.online, device_status.rssi, device_status.uptime
 	FROM devices
 	JOIN device_status ON devices.id = device_status.device_id
+	LEFT JOIN devices AS parent ON parent.id = devices.parent_device_id
 	"""
 
 @app.route("/api/devices")
@@ -249,7 +281,7 @@ def get_devices():
 @app.route("/api/devices/<hardware_id_hex>")
 @login_required
 def get_device(hardware_id_hex):
-	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+	if not re.match(HARDWARE_ID_PATTERN, hardware_id_hex):
 		return jsonify({"error": "Invalid device ID"}), 400
 
 	connection = get_connection()
@@ -268,7 +300,7 @@ def get_device(hardware_id_hex):
 @app.route("/api/devices/<hardware_id_hex>/telemetry")
 @login_required
 def get_telemetry(hardware_id_hex):
-	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+	if not re.match(HARDWARE_ID_PATTERN, hardware_id_hex):
 		return jsonify({"error": "Invalid device ID"}), 400
 
 	capability = request.args.get("capability")
@@ -313,19 +345,13 @@ def get_telemetry(hardware_id_hex):
 @app.route("/api/devices/<hardware_id_hex>/command", methods=["POST"])
 @login_required
 def send_command(hardware_id_hex):
-	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+	if not HARDWARE_ID_PATTERN.match(hardware_id_hex):
 		return jsonify({"error": "Invalid device ID"}), 400
 
 	hardware_id_hex = hardware_id_hex.upper()
 
-	connection = get_connection()
-	row = connection.execute(
-		"SELECT id FROM devices WHERE hardware_id=?",
-		(int(hardware_id_hex, 16),)
-		).fetchone()
-	connection.close()
-
-	if row is None:
+	found, parent_hardware_id_hex = _resolve_parent_hardware_id_hex(hardware_id_hex)
+	if not found:
 		return jsonify({"error": "Device not found"}), 404
 
 	payload = request.get_json(silent=True) or {}
@@ -337,7 +363,7 @@ def send_command(hardware_id_hex):
 	if "data" in payload:
 		command_payload["data"] = payload["data"]
 
-	ok, response = send_device_command(hardware_id_hex, command_payload)
+	ok, response = send_device_command(hardware_id_hex, command_payload, parent_hardware_id_hex)
 
 	if not ok:
 		return jsonify({"success": False, "error": response.get("error", "Command failed")}), 504
@@ -347,8 +373,14 @@ def send_command(hardware_id_hex):
 @app.route("/api/devices/<hardware_id_hex>/rename", methods=["POST"])
 @login_required
 def rename_device(hardware_id_hex):
-	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+	if not HARDWARE_ID_PATTERN.match(hardware_id_hex):
 		return jsonify({"error": "Invalid device ID"}), 400
+
+	hardware_id_hex = hardware_id_hex.upper()
+
+	found, parent_hardware_id_hex = _resolve_parent_hardware_id_hex(hardware_id_hex)
+	if not found:
+		return jsonify({"success": False, "error": "Device not found"}), 404
 
 	payload = request.get_json(silent=True) or {}
 	new_name = (payload.get("name") or "").strip()
@@ -359,7 +391,7 @@ def rename_device(hardware_id_hex):
 		return jsonify({"success": False, "error": "Name must be 31 characters or fewer"}), 400
 
 	command_payload = {"command": "set_config", "data": {"device_name": new_name}}
-	ok, response = send_device_command(hardware_id_hex.upper(), command_payload)
+	ok, response = send_device_command(hardware_id_hex, command_payload, parent_hardware_id_hex)
 
 	if not ok:
 		return jsonify({"success": False, "error": response.get("error", "Rename failed")}), 504
@@ -369,8 +401,14 @@ def rename_device(hardware_id_hex):
 @app.route("/api/devices/<hardware_id_hex>/firmware", methods=["POST"])
 @login_required
 def upload_firmware(hardware_id_hex):
-	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+	if not HARDWARE_ID_PATTERN.match(hardware_id_hex):
 		return jsonify({"error": "Invalid device ID"}), 400
+
+	hardware_id_hex = hardware_id_hex.upper()
+
+	found, parent_hardware_id_hex = _resolve_parent_hardware_id_hex(hardware_id_hex)
+	if not found:
+		return jsonify({"success": False, "error": "Device not found"}), 404
 
 	if "firmware" not in request.files:
 		return jsonify({"success": False, "error": "No firmware file provided"}), 400
@@ -395,7 +433,7 @@ def upload_firmware(hardware_id_hex):
 		"data": {"url": url, "version": description["version"], "sha256": sha256_hex}
 		}
 
-	ok, response = send_device_command(hardware_id_hex.upper(), command_payload)
+	ok, response = send_device_command(hardware_id_hex, command_payload, parent_hardware_id_hex)
 
 	if not ok:
 		return jsonify({"success": False, "error": response.get("error", "Device did not acknowledge the update")}), 504
@@ -424,10 +462,6 @@ def provision_start():
 
 @app.route("/api/provision/claim", methods=["POST"])
 def provision_claim():
-	# Deliberately NOT login_required - the device has no session or
-	# browser. It authenticates this one request with the short-lived
-	# claim code instead, the same trust model /firmware already uses
-	# (HTTPS + a secret proven over that channel, not a login).
 	payload = request.get_json(silent=True) or {}
 	claim_code = (payload.get("claim_code") or "").strip().upper()
 	hardware_id = (payload.get("hardware_id") or "").strip().upper()
@@ -469,7 +503,7 @@ def add_device_page():
 @app.route("/api/devices/<hardware_id_hex>/history")
 @login_required
 def get_history(hardware_id_hex):
-	if not re.match(r"^[0-9A-Fa-f]{12}$", hardware_id_hex):
+	if not HARDWARE_ID_PATTERN.match(hardware_id_hex):
 		return jsonify({"error": "Invalid device ID"}), 400
 
 	capability = request.args.get("capability")

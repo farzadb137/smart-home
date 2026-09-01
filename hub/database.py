@@ -18,13 +18,15 @@ def init_database():
 		CREATE TABLE IF NOT EXISTS devices(
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			hardware_id INTEGER NOT NULL UNIQUE,
+			parent_device_id INTEGER,
 			device_name TEXT NOT NULL,
 			device_type TEXT NOT NULL DEFAULT 'unknown',
 			manufacturer TEXT,
 			model TEXT,
 			hardware TEXT,
 			firmware TEXT,
-			first_seen TEXT NOT NULL
+			first_seen TEXT NOT NULL,
+			FOREIGN KEY (parent_device_id) REFERENCES devices(id)
 			)
 		"""
 		)
@@ -111,7 +113,7 @@ def migrate_database():
 	connection.commit()
 	connection.close()
 
-def get_or_create_device(hardware_id, device_name=None, device_type=None, firmware=None):
+def get_or_create_device(hardware_id, device_name=None, device_type=None, firmware=None, parent_device_id=None):
 	now = datetime.now(timezone.utc).isoformat()
 	connection = get_connection()
 	row = connection.execute(
@@ -122,8 +124,8 @@ def get_or_create_device(hardware_id, device_name=None, device_type=None, firmwa
 		placeholder_name = device_name if device_name else f"{hardware_id:012X}"
 		device_type_value = device_type if device_type else "unknown"
 		cursor = connection.execute(
-			"INSERT INTO devices (hardware_id, device_name, device_type, firmware, first_seen) VALUES (?,?,?,?,?)",
-			(hardware_id, placeholder_name, device_type_value, firmware, now)
+			"INSERT INTO devices (hardware_id, parent_device_id, device_name, device_type, firmware, first_seen) VALUES (?,?,?,?,?,?)",
+			(hardware_id, parent_device_id, placeholder_name, device_type_value, firmware, now)
 			)
 		device_id = cursor.lastrowid
 		connection.execute(
@@ -133,16 +135,35 @@ def get_or_create_device(hardware_id, device_name=None, device_type=None, firmwa
 	else:
 		device_id = row["id"]
 		connection.execute(
-			"UPDATE devices SET firmware = COALESCE(?, firmware), device_name = COALESCE(?, device_name), device_type = COALESCE(?, device_type) WHERE id = ?",
-			(firmware, device_name, device_type, device_id)
+			"""
+			UPDATE devices SET firmware = COALESCE(?, firmware), device_name = COALESCE(?, device_name), 
+			device_type = COALESCE(?, device_type), parent_device_id = COALESCE(?, parent_device_id) WHERE id = ?
+			""",
+			(firmware, device_name, device_type, parent_device_id, device_id)
 			)
 	connection.commit()
 	connection.close()
 	return device_id
 
-def update_device_status(hardware_id, online, rssi, uptime):
+def get_device_with_parent(hardware_id):
+	connection = get_connection()
+	row = connection.execute(
+		"""
+		SELECT
+			d.id, d.hardware_id, d.parent_device_id,
+			p.hardware_id AS parent_hardware_id
+		FROM devices d
+		LEFT JOIN devices p ON p.id = d.parent_device_id
+		WHERE d.hardware_id = ?
+		""",
+		(hardware_id,)
+		).fetchone()
+	connection.close()
+	return row
+
+def update_device_status(hardware_id, online, rssi, uptime, parent_device_id=None):
 	now = datetime.now(timezone.utc).isoformat()
-	device_id = get_or_create_device(hardware_id)
+	device_id = get_or_create_device(hardware_id, parent_device_id=parent_device_id)
 	connection = get_connection()
 	connection.execute(
 		"UPDATE device_status SET online=?, rssi=?, uptime=?, last_seen=? WHERE device_id=?",
@@ -195,7 +216,9 @@ def get_latest_readings(device_ids):
 	return result
 
 def rollup_and_prune(retention_days=RAW_TELEMETRY_RETENTION_DAYS):
-	cutoff = (datetime.now(timezone.utc) - timedelta(days=retention_days)).isoformat()
+	now = datetime.now(timezone.utc)
+	cutoff = (now - timedelta(days=retention_days)).isoformat()
+	current_hour = now.replace(minute=0, second=0, microseconds=0).isoformat()
 	connection = get_connection()
 	connection.execute(
 		"""
@@ -206,11 +229,11 @@ def rollup_and_prune(retention_days=RAW_TELEMETRY_RETENTION_DAYS):
 			strftime('%Y-%m-%dT%H:00:00', timestamp) AS hour_start,
 			COUNT(*), AVG(value), MIN(value), MAX(value), AVG(rssi)
 		FROM readings
-		WHERE timestamp < ? AND valid = 1
+		WHERE valid = 1 AND timestamp < ?
 		GROUP BY device_id, capability, hour_start
 		ON CONFLICT(device_id, capability, hour_start) DO NOTHING
 		""",
-		(cutoff,)
+		(current_hour,)
 		)
 	cursor = connection.execute("DELETE FROM readings WHERE timestamp < ?", (cutoff,))
 	deleted = cursor.rowcount
@@ -244,6 +267,15 @@ def get_user(username):
 	connection.close()
 	return row
 
+def get_user_by_id(user_id):
+	connection = get_connection()
+	row = connection.execute(
+		"SELECT * FROM users WHERE id=?",
+		(user_id,)
+	).fetchone()
+	connection.close()
+	return row
+
 def set_user_password(username, password_hash):
 	connection = get_connection()
 	connection.execute(
@@ -273,29 +305,14 @@ def get_device_history(hardware_id, capability, range_key):
 			(hardware_id, capability, cutoff)
 			).fetchall()
 
-	elif range_key == "7d":
-		cutoff = (now - timedelta(days=7)).isoformat()
-		# Query-time hourly bucketing - readings_hourly only covers data
-		# past the retention/rollup cutoff, so recent raw readings need
-		# bucketing on the fly here to keep the point count reasonable
-		# (a week of ~10s telemetry is ~60k raw rows - too many to chart
-		# directly on modest hardware).
-		rows = connection.execute(
-			"""
-			SELECT
-				strftime('%Y-%m-%dT%H:00:00', timestamp) AS timestamp,
-				AVG(value) AS value_avg, MIN(value) AS value_min, MAX(value) AS value_max
-			FROM readings
-			WHERE device_id=(SELECT id FROM devices WHERE hardware_id=?)
-			  AND capability=? AND timestamp >= ? AND valid=1
-			GROUP BY timestamp
-			ORDER BY timestamp ASC
-			""",
-			(hardware_id, capability, cutoff)
-			).fetchall()
-
-	elif range_key == "30d":
-		cutoff = (now - timedelta(days=30)).isoformat()
+	elif range_key in ("7d", "30d", "90d", "1y"):
+		days = {
+            "7d": 7,
+            "30d": 30,
+            "90d": 90,
+            "1y": 365,
+        }[range_key]
+		cutoff = (now - timedelta(days=days)).isoformat()
 		rows = connection.execute(
 			"""
 			SELECT hour_start AS timestamp, value_avg, value_min, value_max

@@ -2,15 +2,27 @@ import json
 import paho.mqtt.client as mqtt
 import threading
 import time
-from config import(BROKER_HOST,BROKER_PORT,BROKER_USERNAME,BROKER_PASSWORD,TELEMETRY_TOPIC,STATUS_TOPIC)
-from database import(migrate_database,get_or_create_device,save_reading,update_device_status,mark_offline_devices)
+from config import (
+    BROKER_HOST,
+    BROKER_PORT,
+    BROKER_USERNAME,
+    BROKER_PASSWORD,
+    TELEMETRY_TOPIC,
+    STATUS_TOPIC,
+    CHILD_TELEMETRY_TOPIC,
+    CHILD_STATUS_TOPIC
+)
+from database import (
+    migrate_database,
+    get_or_create_device,
+    save_reading,
+    update_device_status,
+    mark_offline_devices
+)
 
 TIME_SYNC_TOPIC = "home/time"
 TIME_SYNC_INTERVAL_SEC = 60
 
-# Set once the client is actually connected (in on_connect) and cleared on
-# disconnect - time_sync_publisher waits on this instead of firing publishes
-# into a socket that isn't up yet.
 mqtt_connected = threading.Event()
 
 def offline_monitor():
@@ -22,11 +34,6 @@ def offline_monitor():
         time.sleep(5)
 
 def time_sync_publisher():
-    # The hub is the time authority for the whole local network - nodes
-    # have no guaranteed internet access, but they're always on the same
-    # broker as us. Retained so a device that (re)connects gets current
-    # time immediately on subscribe, without waiting up to
-    # TIME_SYNC_INTERVAL_SEC for the next periodic publish.
     while True:
         mqtt_connected.wait()
         try:
@@ -36,7 +43,18 @@ def time_sync_publisher():
             print(f"[MQTT] Time sync publish error: {error}")
         time.sleep(TIME_SYNC_INTERVAL_SEC)
 
-def handle_status(message):
+def _parse_topic(topic):
+    parts = topic.split("/")
+
+    if len(parts) == 4 and parts[0] == "home" and parts[1] == "devices" and parts[3] in ("telemetry", "status"):
+        return parts[3], parts[2], None
+
+    if len(parts) == 6 and parts[0] == "home" and parts[1] == "devices" and parts[3] == "children" and parts[5] in ("telemetry", "status"):
+        return parts[5], parts[4], parts[2]
+
+    return None, None, None
+
+def handle_status(message, parent_hardware_id=None):
     try:
         payload = json.loads(message.payload.decode())
     except json.JSONDecodeError:
@@ -48,60 +66,81 @@ def handle_status(message):
     rssi = payload.get("rssi")
     if hardware_id is None:
         return
-    update_device_status(hardware_id, online, rssi, uptime)
-    print(f"[STATUS] id={hardware_id} online={online} rssi={rssi} uptime={uptime}")
+    parent_device_id = get_or_create_device(parent_hardware_id) if parent_hardware_id is not None else None
 
-def handle_telemetry(message):
-	try:
-		payload = json.loads(message.payload.decode())
-	except json.JSONDecodeError:
-		print("[MQTT] Invalid telemetry JSON")
-		return
-	device = payload.get("device", {})
-	system = payload.get("system", {})
-	capabilities = payload.get("capabilities", {})
-	hardware_id = device.get("id")
-	device_name = device.get("name")
-	device_type = device.get("type")
-	firmware = device.get("firmware")
-	rssi = system.get("rssi")
-	uptime = system.get("uptime")
-	time_valid = system.get("time_valid", False)
-	device_timestamp = system.get("timestamp") if time_valid else None
+    update_device_status(hardware_id, online, rssi, uptime, parent_device_id)
 
-	print(f"Device:       {device_name}")
-	print(f"Firmware:     {firmware}")
-	print(f"Capabilities: {list(capabilities.keys())}")
-	print(f"RSSI:         {rssi} dBm")
-	print(f"Uptime:       {uptime} s")
-	if not time_valid:
-		print("[WARN] Device has not synced time yet - recording collector-side timestamp instead")
+    via = f" via={parent_hardware_id:012X}" if parent_hardware_id is not None else ""
+    print(f"[STATUS] id={hardware_id} online={online} rssi={rssi} uptime={uptime}{via}")
 
-	try:
-		device_id = get_or_create_device(hardware_id, device_name, device_type, firmware)
-		for capability_name, reading in capabilities.items():
-			save_reading(device_id, capability_name, reading.get("value"), reading.get("valid"), rssi, uptime, device_timestamp)
-		print(f"[DB] Reading(s) saved(device_id={device_id})")
-	except Exception as error:
-		print(f"[DB] Failed to save reading: {error}")
+def handle_telemetry(message, parent_hardware_id=None):
+    try:
+        payload = json.loads(message.payload.decode())
+    except json.JSONDecodeError:
+        print("[MQTT] Invalid telemetry JSON")
+        return
+    device = payload.get("device", {})
+    system = payload.get("system", {})
+    capabilities = payload.get("capabilities", {})
+    hardware_id = device.get("id")
+    device_name = device.get("name")
+    device_type = device.get("type")
+    firmware = device.get("firmware")
+    rssi = system.get("rssi")
+    uptime = system.get("uptime")
+    time_valid = system.get("time_valid", False)
+    device_timestamp = system.get("timestamp") if time_valid else None
+
+    print(f"Device:       {device_name}")
+    print(f"Firmware:     {firmware}")
+    print(f"Capabilities: {list(capabilities.keys())}")
+    print(f"RSSI:         {rssi} dBm")
+    print(f"Uptime:       {uptime} s")
+    if parent_hardware_id is not None:
+        print(f"Via bridge:   {parent_hardware_id:012X}")
+    if not time_valid:
+        print("[WARN] Device has not synced time yet - recording collector-side timestamp instead")
+
+    try:
+        parent_device_id = get_or_create_device(parent_hardware_id) if parent_hardware_id is not None else None
+        device_id = get_or_create_device(hardware_id, device_name, device_type, firmware, parent_device_id)
+        for capability_name, reading in capabilities.items():
+            save_reading(device_id, capability_name, reading.get("value"), reading.get("valid"), rssi, uptime, device_timestamp)
+        print(f"[DB] Reading(s) saved(device_id={device_id})")
+    except Exception as error:
+        print(f"[DB] Failed to save reading: {error}")
 
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"[MQTT] Connected: {reason_code}")
     client.subscribe(TELEMETRY_TOPIC)
     client.subscribe(STATUS_TOPIC)
+    client.subscribe(CHILD_TELEMETRY_TOPIC)
+    client.subscribe(CHILD_STATUS_TOPIC)
     print(f"[MQTT] Subscribed to: {TELEMETRY_TOPIC}")
     print(f"[MQTT] Subscribed to: {STATUS_TOPIC}")
+    print(f"[MQTT] Subscribed to: {CHILD_TELEMETRY_TOPIC}")
+    print(f"[MQTT] Subscribed to: {CHILD_STATUS_TOPIC}")
     mqtt_connected.set()
 
 def on_disconnect(client, userdata, flags, reason_code, properties):
     mqtt_connected.clear()
 
 def on_message(client, userdata, message):
-    if message.topic.endswith("/status"):
-        handle_status(message)
+    print(
+        f"[MQTT RAW] topic={message.topic} "
+        f"payload={message.payload!r}"
+    )
+    kind, hardware_id_hex, parent_hardware_id_hex = _parse_topic(message.topic)
+    if kind is None:
         return
-    if message.topic.endswith("/telemetry"):
-        handle_telemetry(message)
+
+    parent_hardware_id = int(parent_hardware_id_hex, 16) if parent_hardware_id_hex else None
+
+    if kind == "status":
+        handle_status(message, parent_hardware_id)
+        return
+    if kind == "telemetry":
+        handle_telemetry(message, parent_hardware_id)
         return
 
 migrate_database()
