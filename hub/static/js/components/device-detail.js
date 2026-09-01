@@ -55,6 +55,7 @@ export function renderDeviceDetail(root, device) {
                 <h3 class="detail-section-title">Device info</h3>
                 <div class="climate-details" style="border-top:none;padding-top:0;">
                     <div class="detail"><span class="detail-label">Hardware ID</span><span class="detail-value">${device.hardware_id_hex}</span></div>
+                    ${device.parent_name ? `<div class="detail"><span class="detail-label">Bridge</span><span class="detail-value">${formatDeviceName(device.parent_name)}</span></div>` : ""}
                     <div class="detail"><span class="detail-label">Model</span><span class="detail-value">${device.model || "--"}</span></div>
                     <div class="detail"><span class="detail-label">Firmware</span><span class="detail-value">${device.firmware || "--"}</span></div>
                     <div class="detail"><span class="detail-label">First seen</span><span class="detail-value">${formatRelativeTime(device.first_seen)}</span></div>

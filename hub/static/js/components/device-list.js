@@ -28,7 +28,7 @@ export function renderDeviceList(container, devices) {
                 <span class="device-card-status-dot ${device.online ? "online" : "offline"}"></span>
             </div>
             <strong class="device-card-name">${formatDeviceName(device.name)}</strong>
-            <small class="device-card-subtitle">${device.online ? "Online" : "Offline"}</small>
+            <small class="device-card-subtitle">${device.online ? "Online" : "Offline"}${device.parent_name ? ` · via ${formatDeviceName(device.parent_name)}` : ""}</small>
             ${capability ? `<div class="device-card-value">${formatCapabilityValue(capability, device.readings?.[capability]?.value)}</div>` : ""}
         `;
 

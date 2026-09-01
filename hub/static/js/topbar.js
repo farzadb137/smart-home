@@ -20,7 +20,7 @@ export function renderTopbar(userName) {
         return;
 
     const now = new Date();
-    const namePart = userName ? `, ${userName}` : "";
+    const namePart = userName ? `${userName}` : "";
 
     greetingEl.textContent = `${getGreeting(now)}, ${namePart}`;
     dateEl.textContent = now.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });

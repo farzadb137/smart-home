@@ -65,6 +65,9 @@ async function loadDashboardData() {
         appState.apiOnline = false;
 
         updateDashboard();
+    } finally {
+        appState.hasLoadedOnce = true;
+        refreshDevicesPage();
     }
 }
 
