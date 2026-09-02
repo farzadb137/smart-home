@@ -218,7 +218,7 @@ def get_latest_readings(device_ids):
 def rollup_and_prune(retention_days=RAW_TELEMETRY_RETENTION_DAYS):
 	now = datetime.now(timezone.utc)
 	cutoff = (now - timedelta(days=retention_days)).isoformat()
-	current_hour = now.replace(minute=0, second=0, microseconds=0).isoformat()
+	current_hour = now.replace(minute=0, second=0, microsecond=0).isoformat()
 	connection = get_connection()
 	connection.execute(
 		"""
