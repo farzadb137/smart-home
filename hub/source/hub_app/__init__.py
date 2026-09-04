@@ -7,7 +7,7 @@ from hub_app.provisioning import bp as provisioning_bp
 from hub_app.config import flask_settings, load_or_create_secret_key
 
 def create_app():
-	app = Flask(__name__, static_folder="static", static_url_path="")
+	app = Flask(__name__, static_folder="../static", static_url_path="")
 	app.secret_key = load_or_create_secret_key()
 	app.config.update(flask_settings())
 

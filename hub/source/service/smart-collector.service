@@ -1,5 +1,5 @@
 [Unit]
-Description=IoT Hub - MQTT Collector
+Description=Smart Hub - MQTT Collector
 After=network-online.target mosquitto.service
 Wants=network-online.target mosquitto.service
 StartLimitIntervalSec=60
@@ -9,9 +9,9 @@ StartLimitBurst=5
 Type=simple
 User=farzad
 Group=farzad
-EnvironmentFile=/etc/iot/secrets.env
-WorkingDirectory=/home/farzad/iot/collector
-ExecStart=/home/farzad/iot/collector/.venv/bin/python3 /home/farzad/iot/collector/mqtt_collector.py
+EnvironmentFile=/etc/smart-hub/secrets.env
+WorkingDirectory=/home/farzad/smart-hub/source
+ExecStart=/home/farzad/smart-hub/.venv/bin/python3 /home/farzad/smart-hub/source/mqtt_collector.py
 
 Restart=on-failure
 RestartSec=5
@@ -20,4 +20,4 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 
 [Install]
-WantedBy=iot.target
+WantedBy=smart.target
