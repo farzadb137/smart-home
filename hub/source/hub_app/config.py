@@ -2,8 +2,10 @@ import os
 import secrets
 from datetime import timedelta
 
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FIRMWARE_DIR = os.path.join(BASE_DIR, "firmware")
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
+FIRMWARE_DIR = os.path.join(PROJECT_ROOT, "firmware")
 SECRET_KEY_PATH = os.path.join(BASE_DIR, ".flask_secret_key")
 
 VALID_HISTORY_RANGES = {"24h", "7d", "30d", "90d", "1y"}

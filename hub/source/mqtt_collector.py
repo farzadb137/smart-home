@@ -1,7 +1,9 @@
 import json
-import paho.mqtt.client as mqtt
 import threading
 import time
+
+import paho.mqtt.client as mqtt
+
 from config import (
     BROKER_HOST,
     BROKER_PORT,
@@ -22,18 +24,20 @@ from database import (
 
 TIME_SYNC_TOPIC = "home/time"
 TIME_SYNC_INTERVAL_SEC = 60
+OFFLINE_TIMEOUT_SEC = 30
+OFFLINE_CHECK_INTERVAL_SEC = 5
 
 mqtt_connected = threading.Event()
 
 def offline_monitor():
     while True:
         try:
-            mark_offline_devices(30)
+            mark_offline_devices(OFFLINE_TIMEOUT_SEC)
         except Exception as error:
             print(f"[DB] Offline monitor error: {error}")
-        time.sleep(5)
+        time.sleep(OFFLINE_CHECK_INTERVAL_SEC)
 
-def time_sync_publisher():
+def time_sync_publisher(client):
     while True:
         mqtt_connected.wait()
         try:
@@ -60,12 +64,14 @@ def handle_status(message, parent_hardware_id=None):
     except json.JSONDecodeError:
         print("[MQTT] Invalid status JSON")
         return
+
     hardware_id = payload.get("id")
     online = payload.get("online", False)
     uptime = payload.get("uptime")
     rssi = payload.get("rssi")
     if hardware_id is None:
         return
+
     parent_device_id = get_or_create_device(parent_hardware_id) if parent_hardware_id is not None else None
 
     update_device_status(hardware_id, online, rssi, uptime, parent_device_id)
@@ -79,13 +85,16 @@ def handle_telemetry(message, parent_hardware_id=None):
     except json.JSONDecodeError:
         print("[MQTT] Invalid telemetry JSON")
         return
+
     device = payload.get("device", {})
     system = payload.get("system", {})
     capabilities = payload.get("capabilities", {})
+
     hardware_id = device.get("id")
     device_name = device.get("name")
     device_type = device.get("type")
     firmware = device.get("firmware")
+
     rssi = system.get("rssi")
     uptime = system.get("uptime")
     time_valid = system.get("time_valid", False)
@@ -96,8 +105,10 @@ def handle_telemetry(message, parent_hardware_id=None):
     print(f"Capabilities: {list(capabilities.keys())}")
     print(f"RSSI:         {rssi} dBm")
     print(f"Uptime:       {uptime} s")
+
     if parent_hardware_id is not None:
         print(f"Via bridge:   {parent_hardware_id:012X}")
+
     if not time_valid:
         print("[WARN] Device has not synced time yet - recording collector-side timestamp instead")
 
@@ -112,14 +123,17 @@ def handle_telemetry(message, parent_hardware_id=None):
 
 def on_connect(client, userdata, flags, reason_code, properties):
     print(f"[MQTT] Connected: {reason_code}")
-    client.subscribe(TELEMETRY_TOPIC)
-    client.subscribe(STATUS_TOPIC)
-    client.subscribe(CHILD_TELEMETRY_TOPIC)
-    client.subscribe(CHILD_STATUS_TOPIC)
-    print(f"[MQTT] Subscribed to: {TELEMETRY_TOPIC}")
-    print(f"[MQTT] Subscribed to: {STATUS_TOPIC}")
-    print(f"[MQTT] Subscribed to: {CHILD_TELEMETRY_TOPIC}")
-    print(f"[MQTT] Subscribed to: {CHILD_STATUS_TOPIC}")
+
+    subscriptions = (
+        TELEMETRY_TOPIC,
+        STATUS_TOPIC,
+        CHILD_TELEMETRY_TOPIC,
+        CHILD_STATUS_TOPIC
+    )
+    for topic in subscriptions:
+        client.subscribe(topic)
+        print(f"[MQTT] Subscribed to: {topic}")
+    
     mqtt_connected.set()
 
 def on_disconnect(client, userdata, flags, reason_code, properties):
@@ -138,19 +152,29 @@ def on_message(client, userdata, message):
 
     if kind == "status":
         handle_status(message, parent_hardware_id)
-        return
-    if kind == "telemetry":
+    elif kind == "telemetry":
         handle_telemetry(message, parent_hardware_id)
-        return
 
-migrate_database()
-threading.Thread(target=offline_monitor,daemon=True).start()
-client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-client.username_pw_set(BROKER_USERNAME, BROKER_PASSWORD)
-client.on_connect = on_connect
-client.on_disconnect = on_disconnect
-client.on_message = on_message
-threading.Thread(target=time_sync_publisher,daemon=True).start()
-print("[MQTT] Connecting to broker...")
-client.connect(BROKER_HOST,BROKER_PORT,60)
-client.loop_forever()
+def create_mqtt_client():
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+    client.username_pw_set(BROKER_USERNAME, BROKER_PASSWORD)
+    client.on_connect = on_connect
+    client.on_disconnect = on_disconnect
+    client.on_message = on_message
+    return client
+
+def start_background_tasks(client):
+    threading.Thread(target=offline_monitor, name="offline_monitor", daemon=True).start()
+    threading.Thread(target=time_sync_publisher, args=(client,), name="time_sync_publisher", daemon=True).start()
+
+def main():
+    migrate_database()
+
+    client = create_mqtt_client()
+    start_background_tasks(client)
+    print("[MQTT] Connecting to broker...")
+    client.connect(BROKER_HOST, BROKER_PORT, 60)
+    client.loop_forever()
+
+if __name__ == "__main__":
+    main()
