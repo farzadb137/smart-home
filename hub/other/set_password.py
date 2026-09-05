@@ -20,7 +20,7 @@ def main():
 		return
 
 	set_user_password(username, generate_password_hash(password))
-	print(f"Password set for user '{username}'")
+	print(f"Administrator Password set for user '{username}'")
 
 if __name__ == "__main__":
 	main()

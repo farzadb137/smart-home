@@ -4,11 +4,6 @@ import { renderDeviceDetail, updateDeviceDetailValues } from "./components/devic
 
 let currentRoute = { name: "overview", param: null };
 
-// Tracks which route+param currently has a FULL render sitting in the
-// DOM. null/mismatch means the next refresh must do a full render
-// (fresh load, just switched routes, or recovering from an
-// offline/loading state) rather than the lightweight value-patch path,
-// which assumes the real markup already exists.
 let renderedRouteKey = null;
 
 function container() {
@@ -59,14 +54,6 @@ function renderForRoute() {
     renderedRouteKey = routeKey(currentRoute);
 }
 
-/**
- * Called on every dashboard data poll, including the very first load.
- * Does a full render if the current route hasn't had its real DOM built
- * yet (first load, route just changed, or recovering from a loading/
- * offline placeholder) - otherwise patches values in place only, since
- * a full re-render on every 30s poll would reset the history chart and
- * wipe out any in-progress rename/upload form state.
- */
 export function refreshDevicesPage() {
     if (currentRoute.name !== "devices")
         return;

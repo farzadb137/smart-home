@@ -1,138 +1,218 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Smart Home</title>
-	<link rel="stylesheet" href="css/fonts.css">
-	<link rel="stylesheet" href="css/style.css">
-	<script src="js/vendor/chart.umd.min.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home</title>
+    <link rel="stylesheet" href="css/fonts.css">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/vendor/chart.umd.min.js"></script>
 </head>
 <body>
-	<div class="app">
-		<aside class="sidebar">
-			<div class="brand">
-				<span class="brand-icon">●</span>
-				<span class="brand-name">My Home</span>
-			</div>
-			<nav class="sidebar-nav">
-				<p class="nav-title">MENU</p>
-				<ul>
-					<li>
-						<a href="#overview" class="nav-item active" data-route="overview">
-							<span class="nav-icon">⌂</span>
-							<span>Overview</span>
-						</a>
-					</li>
-					<li>
-						<a href="#" class="nav-item">
-							<span class="nav-icon">□</span>
-							<span>Rooms</span>
-						</a>
-					</li>
-					<li>
-						<a href="#devices" class="nav-item" data-route="devices">
-							<span class="nav-icon">◇</span>
-							<span>Devices</span>
-						</a>
-					</li>
-				</ul>
-				<p class="nav-title">SYSTEM</p>
-				<ul>
-					<li>
-						<a href="#" class="nav-item">
-							<span class="nav-icon">⚙</span>
-							<span>Settings</span>
-						</a>
-					</li>
-				</ul>
-			</nav>
-			<div class="sidebar-status">
-				<span class="status-dot"></span>
-				<div>
-					<strong>Home</strong>
-					<small>All systems normal</small>
-				</div>
-				<button id="logout-btn" style="margin-left:auto;background:none;border:none;color:var(--color-text-muted);cursor:pointer;font-size:12px;">Sign out</button>
-			</div>
-		</aside>
-		<main class="main-content">
-			<header class="topbar">
-			    <div>
-			        <h2 class="greeting-text">Good Evening</h2>
-			        <p class="topbar-date"></p>
-			    </div>
-			    <div class="topbar-time"></div>
-			</header>
-			<section class="view" data-view="overview">
-				<div class="dashboard-grid">
-					<section class="card climate-card">
-					    <div class="card-header">
-					        <div class="climate-card-heading">
-					            <span class="climate-card-icon"></span>
-					            <div>
-					                <p class="card-label">TEMPERATURE</p>
-					                <h2 class="climate-room">Loading…</h2>
-					            </div>
-					        </div>
-					        <span class="status-badge">
-					            <span class="status-dot"></span>
-					            <span class="status-text">Online</span>
-					        </span>
-					    </div>
-					    <div class="climate-body">
-					        <div class="temperature">
-					            <span class="temperature-value">--</span>
-					            <span class="temperature-unit">°C</span>
-					        </div>
-					        <div class="climate-gauge"></div>
-					    </div>
-					    <div class="climate-details">
-					        <div class="detail">
-					            <span class="detail-label">Temperature</span>
-					            <span class="detail-value temperature-detail">-- °C</span>
-					        </div>
-					        <div class="detail">
-					            <span class="detail-label">Last updated</span>
-					            <span class="detail-value last-updated-value">--</span>
-					        </div>
-					    </div>
-					    <div class="climate-history">
-					        <div class="history-range-buttons">
-					            <button class="range-btn active" data-range="24h">24h</button>
-					            <button class="range-btn" data-range="7d">7d</button>
-					            <button class="range-btn" data-range="30d">30d</button>
-					        </div>
-					        <div class="history-chart-wrap">
-					            <canvas class="climate-history-canvas"></canvas>
-					        </div>
-					    </div>
-					</section>
-					<section class="card">
-					    <h2>Rooms</h2>
-					    <p class="card-placeholder-note">Room grouping isn't built yet - coming in a future update.</p>
-					</section>
-					<section class="card devices-card">
-						<div class="card-header">
-							<div>
-								<p class="card-label">DEVICES</p>
-								<h2>Connected Devices</h2>
-							</div>
-							<a href="/add-device" class="nav-item" style="width:auto;padding:8px 14px;">+ Add</a>
-						</div>
-						<div class="devices-list"></div>
-					</section>
-					<section class="card">
-					    <h2>Activity</h2>
-					    <p class="card-placeholder-note">Activity history isn't built yet - coming in a future update.</p>
-					</section>
-				</div>
-			</section>
-			<section class="view" data-view="devices" style="display:none;">
-			    <div id="devices-page"></div>
-			</section>
-		</main>
-	</div>
-	<script type="module" src="js/app.js"></script>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-icon" data-icon="home" aria-hidden="true"></span>
+                <span class="brand-name">My Home</span>
+            </div>
+
+            <nav class="sidebar-nav" aria-label="Main navigation">
+                <p class="nav-title">HOME</p>
+                <ul>
+                    <li>
+                        <a href="#overview" class="nav-item active" data-route="overview">
+                            <span class="nav-icon" data-icon="home" aria-hidden="true"></span>
+                            <span>Home</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#rooms" class="nav-item" data-route="rooms">
+                            <span class="nav-icon" data-icon="rooms" aria-hidden="true"></span>
+                            <span>Rooms</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#devices" class="nav-item" data-route="devices">
+                            <span class="nav-icon" data-icon="devices" aria-hidden="true"></span>
+                            <span>Devices</span>
+                        </a>
+                    </li>
+                </ul>
+
+                <p class="nav-title">SYSTEM</p>
+                <ul>
+                    <li>
+                        <a href="#settings" class="nav-item" data-route="settings" id="admin-settings-link">
+                            <span class="nav-icon" data-icon="settings" aria-hidden="true"></span>
+                            <span>Settings</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+
+            <div class="sidebar-status">
+                <span class="status-dot"></span>
+                <div>
+                    <strong>Home</strong>
+                    <small id="sidebar-status-text">Checking systems…</small>
+                </div>
+                <button id="logout-btn" class="sidebar-logout">Sign out</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="topbar">
+                <div>
+                    <h2 class="greeting-text">Good Evening</h2>
+                    <p class="topbar-date"></p>
+                </div>
+                <div class="topbar-time"></div>
+            </header>
+
+            <section class="view" data-view="overview">
+                <div class="dashboard-grid">
+                    <section class="card home-status-card home-hero" data-state="normal" aria-labelledby="home-status-title">
+                        <div class="home-hero-main">
+                            <div class="home-status-icon" data-status-icon="check" aria-hidden="true"></div>
+                            <div>
+                                <p class="card-label home-status-label">HOME STATUS</p>
+                                <h1 class="home-status-title" id="home-status-title">Checking your home</h1>
+                                <p class="home-status-summary" id="home-status-summary">Connecting to the hub…</p>
+                            </div>
+                        </div>
+                        <div class="home-overview-metrics" aria-label="Home device summary">
+                            <div class="home-metric">
+                                <strong id="home-device-count">0</strong>
+                                <span>Devices</span>
+                            </div>
+                            <div class="home-metric">
+                                <strong id="home-online-count">0</strong>
+                                <span>Online</span>
+                            </div>
+                            <div class="home-metric">
+                                <strong id="home-offline-count">0</strong>
+                                <span>Offline</span>
+                            </div>
+                        </div>
+                        <div class="home-status-footer">
+                            <span class="status-dot"></span>
+                            <span id="home-status-detail">Checking systems…</span>
+                        </div>
+                    </section>
+
+                    <section class="card climate-card">
+                        <div class="card-header">
+                            <div class="climate-card-heading">
+                                <span class="climate-card-icon"></span>
+                                <div>
+                                    <p class="card-label">CLIMATE</p>
+                                    <h2 class="climate-room">Loading…</h2>
+                                </div>
+                            </div>
+                            <span class="status-badge">
+                                <span class="status-dot"></span>
+                                <span class="status-text">Online</span>
+                            </span>
+                        </div>
+                        <div class="climate-body">
+                            <div class="temperature">
+                                <span class="temperature-value">--</span>
+                                <span class="temperature-unit">°C</span>
+                            </div>
+                            <div class="climate-gauge"></div>
+                        </div>
+                        <div class="climate-details">
+                            <div class="detail">
+                                <span class="detail-label">Temperature</span>
+                                <span class="detail-value temperature-detail">-- °C</span>
+                            </div>
+                            <div class="detail">
+                                <span class="detail-label">Last updated</span>
+                                <span class="detail-value last-updated-value">--</span>
+                            </div>
+                        </div>
+                        <div class="climate-history">
+                            <div class="history-range-buttons">
+                                <button class="range-btn active" data-range="24h">24h</button>
+                                <button class="range-btn" data-range="7d">7d</button>
+                                <button class="range-btn" data-range="30d">30d</button>
+                            </div>
+                            <div class="history-chart-wrap">
+                                <canvas class="climate-history-canvas"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card quick-controls-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="card-label">QUICK CONTROLS</p>
+                                <h2>Favorites</h2>
+                            </div>
+                            <a href="#devices" class="section-link" data-route="devices">All devices</a>
+                        </div>
+                        <div class="quick-controls-list"></div>
+                    </section>
+
+                    <section class="card rooms-card" id="rooms-section">
+                        <div class="section-heading">
+                            <div>
+                                <p class="card-label">YOUR HOME</p>
+                                <h2>Rooms</h2>
+                                <p>Group devices by the spaces where they belong.</p>
+                            </div>
+                            <a href="#rooms" class="section-link" data-route="rooms">Open rooms</a>
+                        </div>
+                        <div class="empty-state room-empty-state">
+                            <span class="empty-state-icon" data-icon="room" aria-hidden="true"></span>
+                            <div>
+                                <strong>No rooms configured yet</strong>
+                                <p>Room grouping is ready for the next backend step. Once rooms are available, this section will become your main way to navigate the home.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="card devices-card">
+                        <div class="card-header">
+                            <div>
+                                <p class="card-label">DEVICES</p>
+                                <h2>All Connected Devices</h2>
+                            </div>
+                            <a href="/add-device" class="detail-btn">+ Add device</a>
+                        </div>
+                        <div class="devices-list"></div>
+                    </section>
+
+                    <section class="card activity-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="card-label">TIMELINE</p>
+                                <h2>Recent Activity</h2>
+                                <p>Important events from your home will appear here.</p>
+                            </div>
+                        </div>
+                        <div class="empty-state activity-empty-state">
+                            <span class="empty-state-icon" data-icon="activity" aria-hidden="true"></span>
+                            <div>
+                                <strong>No recent activity yet</strong>
+                                <p>Event history is not exposed by the current API. We will connect this section when the activity model is added.</p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </section>
+
+            <section class="view" data-view="rooms" style="display:none;">
+                <div id="rooms-page"></div>
+            </section>
+            <section class="view" data-view="devices" style="display:none;">
+                <div id="devices-page"></div>
+            </section>
+            <section class="view" data-view="settings" style="display:none;">
+                <div id="settings-page"></div>
+            </section>
+        </main>
+    </div>
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>

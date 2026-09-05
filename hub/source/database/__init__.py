@@ -14,7 +14,21 @@ from .readings import (
 	save_reading
 )
 from .schema import CURRENT_SCHEMA_VERSION, init_database, migrate_database
-from .users import get_user, get_user_by_id, set_user_password
+from .users import (
+	count_enabled_administrators,
+	create_initial_admin,
+	create_user,
+	delete_user,
+	get_user,
+	get_user_by_id,
+	has_administrator,
+	is_setup_complete,
+	list_users,
+	set_setup_complete,
+	set_user_password,
+	update_user,
+	user_count
+)
 
 __all__ = [
 	"CURRENT_SCHEMA_VERSION",
@@ -25,6 +39,15 @@ __all__ = [
 	"get_or_create_device",
 	"get_user",
 	"get_user_by_id",
+	"list_users",
+	"user_count",
+	"has_administrator",
+	"is_setup_complete",
+	"set_setup_complete",
+	"create_initial_admin",
+	"create_user",
+	"delete_user",
+	"count_enabled_administrators",
 	"init_database",
 	"mark_offline_devices",
 	"migrate_database",
