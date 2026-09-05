@@ -83,7 +83,19 @@ def init_database():
 		CREATE TABLE IF NOT EXISTS users(
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			username TEXT NOT NULL UNIQUE,
-			password_hash TEXT NOT NULL
+			password_hash TEXT NOT NULL,
+			role TEXT NOT NULL DEFAULT 'user',
+			enabled INTEGER NOT NULL DEFAULT 1,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL
+			)
+		"""
+	)
+	connection.execute(
+		"""
+		CREATE TABLE IF NOT EXISTS system_settings(
+			key TEXT PRIMARY KEY,
+			value TEXT NOT NULL
 			)
 		"""
 	)

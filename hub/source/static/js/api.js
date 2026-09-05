@@ -6,8 +6,10 @@ async function apiRequestFn(endpoint) {
 		window.location.href = "/login";
 		throw new Error("Not authenticated");
 	}
-	if(!response.ok)
-		throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+	if(!response.ok) {
+		const body = await response.json().catch(() => ({}));
+		throw new Error(body.error || `API request failed: ${response.status} ${response.statusText}`);
+	}
 	return response.json();
 }
 
@@ -85,6 +87,35 @@ export async function uploadFirmware(hardwareIdHex, file) {
 export async function logout() {
 	await fetch("/api/logout", { method: "POST" });
 	window.location.href = "/login";
+}
+
+export async function getUsers() {
+	return apiRequestFn("/users");
+}
+
+async function mutateUser(endpoint, method, payload = undefined) {
+	const options = { method, headers: { "Content-Type": "application/json" } };
+	if (payload != undefined) options.body = JSON.stringify(payload);
+	const response = await fetch(`${API_BASE}${endpoint}`, options);
+	if (response.status === 401) {
+		window.location.href = "/login";
+		throw new Error("Not authenticated");
+	}
+	const body = await response.json().catch(() => ({}));
+	if (!response.ok) throw new Error(body.error || `User request failed: ${response.status}`);
+	return body;
+}
+
+export async function createUser(payload) {
+	return mutateUser("/users", "POST", payload);
+}
+
+export async function updateUser(userId, payload) {
+	return mutateUser(`/users/${encodeURIComponent(userId)}`, "PUT", payload);
+}
+
+export async function deleteUser(userId) {
+	return mutateUser(`/users/${encodeURIComponent(userId)}`, "DELETE");
 }
 
 export { apiRequestFn };
