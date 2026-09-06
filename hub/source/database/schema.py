@@ -6,10 +6,23 @@ def init_database():
 	connection = get_connection()
 	connection.execute(
 		"""
+		CREATE TABLE IF NOT EXISTS rooms(
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL UNIQUE,
+			icon TEXT NOT NULL DEFAULT 'room',
+			sort_order INTEGER NOT NULL DEFAULT 0,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL
+		)
+		"""
+	)
+	connection.execute(
+		"""
 		CREATE TABLE IF NOT EXISTS devices(
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			hardware_id INTEGER NOT NULL UNIQUE,
 			parent_device_id INTEGER,
+			room_id INTEGER,
 			device_name TEXT NOT NULL,
 			device_type TEXT NOT NULL DEFAULT 'unknown',
 			manufacturer TEXT,
@@ -17,10 +30,12 @@ def init_database():
 			hardware TEXT,
 			firmware TEXT,
 			first_seen TEXT NOT NULL,
-			FOREIGN KEY (parent_device_id) REFERENCES devices(id)
+			FOREIGN KEY (parent_device_id) REFERENCES devices(id),
+			FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE SET NULL
 			)
 		"""
 	)
+	connection.execute("CREATE INDEX IF NOT EXISTS idx_devices_room_id ON devices(room_id)")
 	connection.execute(
 		"""
 		CREATE TABLE IF NOT EXISTS device_status(

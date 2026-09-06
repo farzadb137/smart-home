@@ -3,6 +3,7 @@ import { fetchDeviceHistory, renderHistoryChart } from "../history.js";
 import { formatDeviceName, formatRelativeTime } from "../utils.js";
 import { CAPABILITY_ICONS, DEFAULT_ICON } from "../icons.js";
 import { formatCapabilityValue, getCapabilityLabel, getPrimaryCapability } from "../capabilities.js";
+import { getPendingCommand, setPendingCommand, clearPendingCommand } from "../state.js";
 
 let activeChart = null;
 
@@ -221,9 +222,13 @@ function createCapabilityControl(device, name, value) {
 
 async function sendCapabilityValue(device, name, value, source) {
     if (source) source.disabled = true;
+    setPendingCommand(device.hardware_id_hex, name, value);
     try {
         const result = await sendDeviceCommand(device.hardware_id_hex, "set_capability", { name, value });
-        if (!result.success) return false;
+        if (!result.success) {
+            clearPendingCommand(device.hardware_id_hex, name);
+            return false;
+        }
         if (device.readings?.[name]) device.readings[name].value = value;
         const valueEl = document.getElementById(`cap-value-${name}`);
         if (valueEl) valueEl.textContent = formatCapabilityValue(name, value);
@@ -233,6 +238,7 @@ async function sendCapabilityValue(device, name, value, source) {
         }
         return true;
     } catch (error) {
+        clearPendingCommand(device.hardware_id_hex, name);
         console.error("Command failed:", error);
         return false;
     } finally {
@@ -246,6 +252,7 @@ function wirePrimarySwitch(device) {
 
     toggle.addEventListener("change", async event => {
         const newValue = event.target.checked ? 1 : 0;
+        setPendingCommand(device.hardware_id_hex, "switch", newValue);
         event.target.disabled = true;
         try {
             const result = await sendDeviceCommand(device.hardware_id_hex, "set_capability", { name: "switch", value: newValue });
@@ -254,9 +261,11 @@ function wirePrimarySwitch(device) {
                 const value = document.getElementById("detail-primary-value");
                 if (value) value.textContent = formatCapabilityValue("switch", newValue);
             } else {
+                clearPendingCommand(device.hardware_id_hex, "switch");
                 event.target.checked = !event.target.checked;
             }
         } catch (error) {
+            clearPendingCommand(device.hardware_id_hex, "switch");
             event.target.checked = !event.target.checked;
             console.error("Command failed:", error);
         } finally {
@@ -385,8 +394,12 @@ export function updateDeviceDetailValues(device) {
         }
         if (name === "switch") {
             const toggle = document.getElementById("detail-switch-toggle");
-            if (toggle && document.activeElement !== toggle) toggle.checked = Boolean(reading.value);
-            if (toggle) toggle.disabled = !device.online;
+            const pending = getPendingCommand(device.hardware_id_hex, "switch");
+            const telemetryValue = Boolean(reading.value);
+            if (pending && telemetryValue === Boolean(pending.value)) clearPendingCommand(device.hardware_id_hex, "switch");
+            const desired = getPendingCommand(device.hardware_id_hex, "switch");
+            if (toggle && document.activeElement !== toggle) toggle.checked = desired ? Boolean(desired.value) : telemetryValue;
+            if (toggle) toggle.disabled = !device.online || Boolean(desired);
         }
     });
 }

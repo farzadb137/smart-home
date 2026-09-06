@@ -1,6 +1,7 @@
 import { CAPABILITY_ICONS, DEFAULT_ICON } from "../icons.js";
 import { formatDeviceName } from "../utils.js";
 import { sendDeviceCommand } from "../api.js";
+import { getPendingCommand, setPendingCommand, clearPendingCommand } from "../state.js";
 import {
     formatCapabilityValue,
     getCapabilityLabel,
@@ -53,6 +54,7 @@ function createCard(device, { link = false } = {}) {
 
     const card = document.createElement("article");
     card.classList.add("device-card", `device-card--${state}`);
+    card.dataset.hardwareId = device.hardware_id_hex || "";
 
     const main = document.createElement("div");
     main.className = "device-card-main";
@@ -115,6 +117,7 @@ function wireControl(card, device, capability, control) {
     if (toggleInput) {
         toggleInput.addEventListener("change", async event => {
             const newValue = event.target.checked ? 1 : 0;
+            setPendingCommand(device.hardware_id_hex, capability, newValue);
             event.target.disabled = true;
             card.classList.toggle("device-card--active", Boolean(newValue));
             card.classList.toggle("device-card--idle", !newValue);
@@ -122,12 +125,15 @@ function wireControl(card, device, capability, control) {
                 const result = await sendDeviceCommand(device.hardware_id_hex, "set_capability", { name: capability, value: newValue });
                 if (result.success) {
                     if (device.readings?.[capability]) device.readings[capability].value = newValue;
+                    // Keep the desired state until telemetry confirms it.
                 } else {
+                    clearPendingCommand(device.hardware_id_hex, capability);
                     event.target.checked = !event.target.checked;
                     card.classList.toggle("device-card--active", event.target.checked);
                     card.classList.toggle("device-card--idle", !event.target.checked);
                 }
             } catch (error) {
+                clearPendingCommand(device.hardware_id_hex, capability);
                 event.target.checked = !event.target.checked;
                 card.classList.toggle("device-card--active", event.target.checked);
                 card.classList.toggle("device-card--idle", !event.target.checked);
@@ -147,6 +153,7 @@ function wireControl(card, device, capability, control) {
         });
         range.addEventListener("change", async () => {
             const newValue = Number(range.value);
+            setPendingCommand(device.hardware_id_hex, capability, newValue);
             range.disabled = true;
             try {
                 const result = await sendDeviceCommand(device.hardware_id_hex, "set_capability", { name: capability, value: newValue });
@@ -154,10 +161,12 @@ function wireControl(card, device, capability, control) {
                     previousValue = newValue;
                     if (device.readings?.[capability]) device.readings[capability].value = newValue;
                 } else {
+                    clearPendingCommand(device.hardware_id_hex, capability);
                     range.value = String(previousValue);
                     valueEl.textContent = `${previousValue}%`;
                 }
             } catch (error) {
+                clearPendingCommand(device.hardware_id_hex, capability);
                 range.value = String(previousValue);
                 valueEl.textContent = `${previousValue}%`;
                 console.error("Command failed:", error);
@@ -166,6 +175,65 @@ function wireControl(card, device, capability, control) {
             }
         });
     }
+}
+
+export function updateDeviceCards(container, devices) {
+    if (!container) return;
+    const byId = new Map((devices || []).map(device => [String(device.hardware_id_hex), device]));
+
+    container.querySelectorAll(".device-card[data-hardware-id]").forEach(card => {
+        const device = byId.get(String(card.dataset.hardwareId));
+        if (!device) return;
+
+        const capability = getPrimaryCapability(device);
+        const state = getDeviceState(device, capability);
+        card.classList.remove("device-card--online", "device-card--offline", "device-card--active", "device-card--idle");
+        card.classList.add(`device-card--${state}`);
+
+        const dot = card.querySelector(".device-card-status-dot");
+        const status = card.querySelector(".device-card-status");
+        if (dot) {
+            dot.classList.toggle("online", Boolean(device.online));
+            dot.classList.toggle("offline", !device.online);
+        }
+        if (status) {
+            status.title = device.online ? "Online" : "Offline";
+            const label = status.querySelector("span:last-child");
+            if (label) label.textContent = device.online ? "Online" : "Offline";
+        }
+
+        const toggle = card.querySelector(".device-toggle input");
+        if (toggle && document.activeElement !== toggle) {
+            const pending = getPendingCommand(device.hardware_id_hex, "switch");
+            const telemetryValue = Boolean(device.readings?.switch?.value);
+            if (pending && telemetryValue === Boolean(pending.value)) clearPendingCommand(device.hardware_id_hex, "switch");
+            const desired = getPendingCommand(device.hardware_id_hex, "switch");
+            toggle.checked = desired ? Boolean(desired.value) : telemetryValue;
+            toggle.disabled = !device.online || Boolean(desired);
+        }
+
+        const range = card.querySelector(".device-range");
+        const rangeValue = card.querySelector(".device-range-value");
+        if (range && document.activeElement !== range) {
+            const telemetryValue = Math.max(0, Math.min(100, Number(device.readings?.brightness?.value ?? 0)));
+            const pending = getPendingCommand(device.hardware_id_hex, "brightness");
+            if (pending && telemetryValue === Number(pending.value)) clearPendingCommand(device.hardware_id_hex, "brightness");
+            const desired = getPendingCommand(device.hardware_id_hex, "brightness");
+            const value = desired ? Number(desired.value) : telemetryValue;
+            range.value = String(value);
+            if (rangeValue) rangeValue.textContent = `${value}%`;
+            range.disabled = !device.online || Boolean(desired);
+        }
+
+        const secondary = card.querySelector(".device-card-secondary");
+        if (secondary) {
+            const names = getSecondaryCapabilities(device, 2);
+            secondary.innerHTML = names.map(name => {
+                const value = device.readings?.[name]?.value;
+                return `<span><small>${getCapabilityLabel(name)}</small><strong>${formatCapabilityValue(name, value)}</strong></span>`;
+            }).join("");
+        }
+    });
 }
 
 export function renderDeviceCard(device, options = {}) {

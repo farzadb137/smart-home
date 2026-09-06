@@ -119,3 +119,35 @@ export async function deleteUser(userId) {
 }
 
 export { apiRequestFn };
+export async function getRooms() {
+    return apiRequestFn("/rooms");
+}
+
+async function mutateRoom(endpoint, method, payload = undefined) {
+    const options = { method, headers: { "Content-Type": "application/json" } };
+    if (payload !== undefined) options.body = JSON.stringify(payload);
+    const response = await fetch(`${API_BASE}${endpoint}`, options);
+    if (response.status === 401) {
+        window.location.href = "/login";
+        throw new Error("Not authenticated");
+    }
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.error || `Room request failed: ${response.status}`);
+    return body;
+}
+
+export async function createRoom(payload) {
+    return mutateRoom("/rooms", "POST", payload);
+}
+
+export async function updateRoom(roomId, payload) {
+    return mutateRoom(`/rooms/${encodeURIComponent(roomId)}`, "PUT", payload);
+}
+
+export async function deleteRoom(roomId) {
+    return mutateRoom(`/rooms/${encodeURIComponent(roomId)}`, "DELETE");
+}
+
+export async function assignDeviceToRoom(hardwareIdHex, roomId) {
+    return mutateRoom(`/devices/${encodeURIComponent(hardwareIdHex)}/room`, "PUT", { room_id: roomId });
+}

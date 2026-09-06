@@ -28,6 +28,8 @@ _DEVICE_QUERY = """
 		devices.parent_device_id,
 		parent.hardware_id AS parent_hardware_id,
 		parent.device_name AS parent_device_name,
+		devices.room_id,
+		room.name AS room_name,
 		device_status.last_seen,
 		device_status.online,
 		device_status.rssi,
@@ -35,6 +37,7 @@ _DEVICE_QUERY = """
 	FROM devices
 	JOIN device_status ON devices.id = device_status.device_id
 	LEFT JOIN devices AS parent ON parent.id = devices.parent_device_id
+	LEFT JOIN rooms AS room ON room.id = devices.room_id
 	"""
 
 def _valid_hardware_id(hardware_id_hex):
@@ -62,7 +65,9 @@ def _serialize_device(row, readings):
 			if row["parent_hardware_id"] is not None
 			else None
 		),
-		"parent_name": row["parent_device_name"]
+		"parent_name": row["parent_device_name"],
+		"room_id": row["room_id"],
+		"room_name": row["room_name"]
 		}
 
 def _resolve_parent_hardware_id_hex(hardware_id_hex):
