@@ -1,8 +1,9 @@
-import { getHealth, getDevices, getSession, logout } from "./api.js";
+import { getHealth, getDevices, getRooms, getSession, logout } from "./api.js";
 import { appState } from "./state.js";
 import { renderTopbar } from "./topbar.js";
 import { renderClimate } from "./components/climate.js";
 import { renderDevices } from "./components/devices.js";
+import { updateDeviceCards } from "./components/device-card.js";
 import { renderHomeStatus } from "./components/home-status.js";
 import { renderHomeOverview } from "./components/home-overview.js";
 import { initRouter, onRouteChange } from "./router.js";
@@ -10,8 +11,14 @@ import { initDevicesPage, refreshDevicesPage } from "./devices-page.js";
 import { initUsersPage } from "./users-page.js";
 import { UI_ICONS } from "./icons.js";
 import { initRoomsPage, refreshRoomsPage } from "./rooms-page.js";
+import { initDiagnostics } from "./diagnostics.js";
+
+// Install before DOM work so browser-injected performance tooling errors are
+// handled even if they fire during page startup.
+initDiagnostics();
 
 const REFRESH_INTERVAL = 30000;
+let dashboardRefreshInFlight = false;
 
 function renderUiIcons() {
     document.querySelectorAll("[data-icon]").forEach(element => {
@@ -33,23 +40,23 @@ function getClimateDevice() {
     );
 }
 
-function updateDashboard() {
+function updateDashboard(source = "manual") {
     renderHomeStatus(appState);
     renderStatusIcon(document.querySelector(".home-status-card")?.dataset.state || "normal");
-    renderHomeOverview(appState);
+    renderHomeOverview(appState, { source });
 
     if (!appState.apiOnline) {
-        renderClimate({ state: "api-offline" });
-        renderDevices([]);
-        refreshDevicesPage();
-    refreshRoomsPage();
+        renderClimate({ state: "api-offline" }, { refreshHistory: false });
+        if (source !== "poll") renderDevices([]);
+        refreshDevicesPage({ source });
+        refreshRoomsPage({ source });
         return;
     }
 
     const climateDevice = getClimateDevice();
 
     if (!climateDevice) {
-        renderClimate({ state: "device-not-found" });
+        renderClimate({ state: "device-not-found" }, { refreshHistory: false });
     } else {
         renderClimate({
             state: "normal",
@@ -58,12 +65,17 @@ function updateDashboard() {
             lastUpdated: climateDevice.readings?.temperature?.timestamp ?? null,
             online: climateDevice.online,
             hardwareId: climateDevice.hardware_id_hex
-        });
+        }, { refreshHistory: source !== "poll" });
     }
 
-    renderDevices(appState.devices);
-    refreshDevicesPage();
-    refreshRoomsPage();
+    const devicesContainer = document.querySelector(".devices-list");
+    if (source === "poll" && devicesContainer) {
+        updateDeviceCards(devicesContainer, appState.devices);
+    } else {
+        renderDevices(appState.devices);
+    }
+    refreshDevicesPage({ source });
+    refreshRoomsPage({ source });
 }
 
 function updateAdminNavigation() {
@@ -86,24 +98,27 @@ async function loadUserSession() {
 }
 
 async function loadDashboardData() {
+    if (dashboardRefreshInFlight) return;
+    dashboardRefreshInFlight = true;
+
     try {
         await getHealth();
 
         appState.apiOnline = true;
         appState.devices = await getDevices();
+        appState.rooms = await getRooms();
 
-        updateDashboard();
+        updateDashboard(appState.hasLoadedOnce ? "poll" : "initial");
 
     } catch (error) {
         console.error("Failed to load dashboard data:", error);
 
         appState.apiOnline = false;
 
-        updateDashboard();
+        updateDashboard(appState.hasLoadedOnce ? "poll" : "initial");
     } finally {
         appState.hasLoadedOnce = true;
-        refreshDevicesPage();
-    refreshRoomsPage();
+        dashboardRefreshInFlight = false;
     }
 }
 
@@ -114,7 +129,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     initDevicesPage(onRouteChange);
     initUsersPage();
-    initRoomsPage();
+    initRoomsPage(onRouteChange);
     initRouter();
 
     document.querySelectorAll("[data-scroll-target]").forEach(link => {

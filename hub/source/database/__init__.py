@@ -7,6 +7,14 @@ from .devices import (
 	mark_offline_devices,
 	update_device_status
 )
+from .rooms import (
+	assign_device_to_room,
+	create_room,
+	delete_room,
+	get_room,
+	list_rooms,
+	update_room
+)
 from .readings import (
 	get_device_history,
 	get_latest_readings,
@@ -54,5 +62,11 @@ __all__ = [
 	"rollup_and_prune",
 	"save_reading",
 	"set_user_password",
-	"update_device_status"
+	"update_device_status",
+	"assign_device_to_room",
+	"create_room",
+	"delete_room",
+	"get_room",
+	"list_rooms",
+	"update_room"
 ]

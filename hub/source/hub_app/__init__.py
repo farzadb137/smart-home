@@ -6,6 +6,7 @@ from hub_app.auth import bp as auth_bp
 from hub_app.devices import bp as devices_bp
 from hub_app.firmware import bp as firmware_bp
 from hub_app.provisioning import bp as provisioning_bp
+from hub_app.rooms import bp as rooms_bp
 from hub_app.setup import bp as setup_bp
 from hub_app.config import flask_settings, load_or_create_secret_key
 
@@ -18,6 +19,7 @@ def create_app():
 	app.register_blueprint(devices_bp)
 	app.register_blueprint(firmware_bp)
 	app.register_blueprint(provisioning_bp)
+	app.register_blueprint(rooms_bp)
 	app.register_blueprint(setup_bp)
 
 	@app.route("/")

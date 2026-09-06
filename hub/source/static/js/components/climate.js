@@ -87,7 +87,7 @@ function wireRangeButtons(hardwareIdHex) {
     });
 }
 
-export function renderClimate(data) {
+export function renderClimate(data, options = {}) {
     const roomEl = document.querySelector(".climate-room");
     const iconEl = document.querySelector(".climate-card-icon");
     const temperatureValue = document.querySelector(".temperature-value");
@@ -155,6 +155,8 @@ export function renderClimate(data) {
             currentHardwareId = data.hardwareId;
             wireRangeButtons(data.hardwareId);
         }
-        loadAndRenderHistory(data.hardwareId, currentRange);
+        if (options.refreshHistory !== false) {
+            loadAndRenderHistory(data.hardwareId, currentRange);
+        }
     }
 }

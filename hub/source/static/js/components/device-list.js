@@ -1,8 +1,11 @@
 import { renderDeviceCards } from "./device-card.js";
 
-export function renderDeviceList(container, devices) {
+export function renderDeviceList(container, devices, options = {}) {
     if (!container) return;
-
-    container.innerHTML = `<div class="devices-list devices-page-grid"></div>`;
-    renderDeviceCards(container.querySelector(".devices-page-grid"), devices, { link: true });
+    container.innerHTML = "";
+    renderDeviceCards(container, devices, {
+        link: true,
+        emptyTitle: options.filtered ? "No matching devices" : "No devices yet",
+        emptyText: options.filtered ? "Try changing the search or filters." : "Connect a device to start controlling and monitoring your home."
+    });
 }
