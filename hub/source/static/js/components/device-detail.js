@@ -1,4 +1,5 @@
-import { renameDevice, uploadFirmware, sendDeviceCommand } from "../api.js";
+import { renameDevice, uploadFirmware, sendDeviceCommand, assignDeviceToRoom } from "../api.js";
+import { appState } from "../state.js";
 import { fetchDeviceHistory, renderHistoryChart } from "../history.js";
 import { formatDeviceName, formatRelativeTime } from "../utils.js";
 import { CAPABILITY_ICONS, DEFAULT_ICON } from "../icons.js";
@@ -78,6 +79,7 @@ export function renderDeviceDetail(root, device) {
                         <div class="detail"><span class="detail-label">Hardware ID</span><span class="detail-value">${device.hardware_id_hex || "--"}</span></div>
                         ${device.parent_name ? `<div class="detail"><span class="detail-label">Bridge</span><span class="detail-value">${formatDeviceName(device.parent_name)}</span></div>` : ""}
                         <div class="detail"><span class="detail-label">Model</span><span class="detail-value">${device.model || "--"}</span></div>
+                        <div class="detail"><span class="detail-label">Room</span><span class="detail-value" id="detail-room-name">${device.room_name || "Unassigned"}</span></div>
                         <div class="detail"><span class="detail-label">Firmware</span><span class="detail-value">${device.firmware || "--"}</span></div>
                         <div class="detail"><span class="detail-label">First seen</span><span class="detail-value">${formatRelativeTime(device.first_seen)}</span></div>
                     </div>
@@ -115,6 +117,15 @@ export function renderDeviceDetail(root, device) {
                         <button id="rename-btn" class="detail-btn">Save</button>
                     </div>
                     <div id="rename-status" class="detail-status-line"></div>
+                    <div class="detail-setting-row">
+                        <label for="detail-room-select">Room</label>
+                        <select id="detail-room-select">
+                            <option value="">Unassigned</option>
+                            ${(Array.isArray(appState.rooms) ? appState.rooms : []).map(room => `<option value="${room.id}" ${String(room.id) === String(device.room_id ?? "") ? "selected" : ""}>${escapeHtml(room.name || "Room")}</option>`).join("")}
+                        </select>
+                        <button id="detail-room-save" class="detail-btn" type="button">Save room</button>
+                    </div>
+                    <div id="room-status" class="detail-status-line"></div>
                 </div>
 
                 <div class="card">
@@ -136,6 +147,7 @@ export function renderDeviceDetail(root, device) {
     renderCapabilityCards(device, capabilities);
     wirePrimarySwitch(device);
     wireRename(device);
+    wireRoomAssignment(device);
     wireFirmwareUpload(device);
     wireHistory(device, capabilities);
 }
@@ -272,6 +284,40 @@ function wirePrimarySwitch(device) {
             event.target.disabled = false;
         }
     });
+}
+
+
+function wireRoomAssignment(device) {
+    const select = document.getElementById("detail-room-select");
+    const button = document.getElementById("detail-room-save");
+    const status = document.getElementById("room-status");
+    if (!select || !button) return;
+
+    button.addEventListener("click", async () => {
+        button.disabled = true;
+        if (status) status.textContent = "Saving room…";
+        try {
+            const roomId = select.value ? Number(select.value) : null;
+            const result = await assignDeviceToRoom(device.hardware_id_hex, roomId);
+            if (!result.success) throw new Error(result.error || "Room assignment failed");
+            device.room_id = roomId;
+            const room = (Array.isArray(appState.rooms) ? appState.rooms : []).find(item => String(item.id) === String(roomId));
+            device.room_name = room?.name || null;
+            const roomName = document.getElementById("detail-room-name");
+            if (roomName) roomName.textContent = room?.name || "Unassigned";
+            if (status) status.textContent = room?.name ? `Assigned to ${room.name}.` : "Device is now unassigned.";
+        } catch (error) {
+            if (status) status.textContent = error.message;
+        } finally {
+            button.disabled = false;
+        }
+    });
+}
+
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[character]));
 }
 
 function wireRename(device) {

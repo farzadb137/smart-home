@@ -1,7 +1,7 @@
-import { CAPABILITY_ICONS, DEFAULT_ICON } from "../icons.js";
+import { CAPABILITY_ICONS, DEFAULT_ICON, UI_ICONS } from "../icons.js";
 import { formatDeviceName } from "../utils.js";
 import { sendDeviceCommand } from "../api.js";
-import { getPendingCommand, setPendingCommand, clearPendingCommand } from "../state.js";
+import { getPendingCommand, setPendingCommand, clearPendingCommand, isFavoriteDevice, setFavoriteDevice } from "../state.js";
 import {
     formatCapabilityValue,
     getCapabilityLabel,
@@ -43,7 +43,7 @@ function getDeviceState(device, capability) {
     return "online";
 }
 
-function createCard(device, { link = false } = {}) {
+function createCard(device, { link = false, selectable = false, selected = false, favorite = false, onSelect = null, onFavoriteChange = null } = {}) {
     const capability = getPrimaryCapability(device);
     const secondaryCapabilities = getSecondaryCapabilities(device, 2);
     const icon = capability ? (CAPABILITY_ICONS[capability] || DEFAULT_ICON) : DEFAULT_ICON;
@@ -68,6 +68,48 @@ function createCard(device, { link = false } = {}) {
             <span>${device.online ? "Online" : "Offline"}</span>
         </span>
     `;
+
+    const actions = document.createElement("div");
+    actions.className = "device-card-actions";
+
+    if (favorite) {
+        const favoriteButton = document.createElement("button");
+        favoriteButton.className = `device-favorite${isFavoriteDevice(device.hardware_id_hex) ? " is-favorite" : ""}`;
+        favoriteButton.type = "button";
+        favoriteButton.dataset.deviceFavorite = "";
+        favoriteButton.setAttribute("aria-pressed", String(isFavoriteDevice(device.hardware_id_hex)));
+        favoriteButton.setAttribute("aria-label", `${isFavoriteDevice(device.hardware_id_hex) ? "Remove" : "Add"} ${name} ${isFavoriteDevice(device.hardware_id_hex) ? "from" : "to"} favorites`);
+        favoriteButton.title = isFavoriteDevice(device.hardware_id_hex) ? "Remove from favorites" : "Add to favorites";
+        favoriteButton.innerHTML = `<span aria-hidden="true">${isFavoriteDevice(device.hardware_id_hex) ? UI_ICONS.star_filled : UI_ICONS.star}</span>`;
+        favoriteButton.addEventListener("click", event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const next = !isFavoriteDevice(device.hardware_id_hex);
+            setFavoriteDevice(device.hardware_id_hex, next);
+            favoriteButton.classList.toggle("is-favorite", next);
+            favoriteButton.setAttribute("aria-pressed", String(next));
+            favoriteButton.setAttribute("aria-label", `${next ? "Remove" : "Add"} ${name} ${next ? "from" : "to"} favorites`);
+            favoriteButton.title = next ? "Remove from favorites" : "Add to favorites";
+            favoriteButton.querySelector("span").innerHTML = next ? UI_ICONS.star_filled : UI_ICONS.star;
+            if (typeof onFavoriteChange === "function") onFavoriteChange(device, next);
+        });
+        actions.append(favoriteButton);
+    }
+
+    if (selectable) {
+        const select = document.createElement("label");
+        select.className = "device-card-select";
+        select.title = `Select ${name}`;
+        select.innerHTML = `<input type="checkbox" data-device-select aria-label="Select ${name}" ${selected ? "checked" : ""}><span></span>`;
+        const input = select.querySelector("input");
+        input.addEventListener("click", event => event.stopPropagation());
+        input.addEventListener("change", event => {
+            if (typeof onSelect === "function") onSelect(device, event.target.checked);
+        });
+        actions.append(select);
+    }
+
+    if (actions.children.length) top.append(actions);
 
     const copy = document.createElement("div");
     copy.className = "device-card-copy";
@@ -236,6 +278,23 @@ export function updateDeviceCards(container, devices) {
     });
 }
 
+export function updateFavoriteButtons(container) {
+    if (!container) return;
+    container.querySelectorAll(".device-card[data-hardware-id] [data-device-favorite]").forEach(button => {
+        const card = button.closest(".device-card");
+        const id = card?.dataset.hardwareId;
+        if (!id) return;
+        const favorite = isFavoriteDevice(id);
+        button.classList.toggle("is-favorite", favorite);
+        button.setAttribute("aria-pressed", String(favorite));
+        button.title = favorite ? "Remove from favorites" : "Add to favorites";
+        const label = card.querySelector(".device-card-name")?.textContent || "device";
+        button.setAttribute("aria-label", `${favorite ? "Remove" : "Add"} ${label} ${favorite ? "from" : "to"} favorites`);
+        const icon = button.querySelector("span");
+        if (icon) icon.innerHTML = favorite ? UI_ICONS.star_filled : UI_ICONS.star;
+    });
+}
+
 export function renderDeviceCard(device, options = {}) {
     return createCard(device, options);
 }
@@ -249,5 +308,5 @@ export function renderDeviceCards(container, devices, options = {}) {
         container.innerHTML = `<div class="empty-state device-empty-state"><strong>${emptyTitle}</strong><p>${emptyText}</p></div>`;
         return;
     }
-    devices.forEach(device => container.append(createCard(device, options)));
+    devices.forEach(device => container.append(createCard(device, { ...options, selected: options.selectedIds?.has(String(device.hardware_id_hex)) })));
 }

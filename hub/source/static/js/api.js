@@ -119,6 +119,10 @@ export async function deleteUser(userId) {
 }
 
 export { apiRequestFn };
+export async function getActivity(limit = 100) {
+    return apiRequestFn(`/activity?limit=${encodeURIComponent(limit)}`);
+}
+
 export async function getRooms() {
     return apiRequestFn("/rooms");
 }
@@ -151,3 +155,22 @@ export async function deleteRoom(roomId) {
 export async function assignDeviceToRoom(hardwareIdHex, roomId) {
     return mutateRoom(`/devices/${encodeURIComponent(hardwareIdHex)}/room`, "PUT", { room_id: roomId });
 }
+
+export async function getAutomations() {
+    return apiRequestFn("/automations");
+}
+
+async function mutateAutomation(endpoint, method, payload = undefined) {
+    const options = { method, headers: { "Content-Type": "application/json" } };
+    if (payload !== undefined) options.body = JSON.stringify(payload);
+    const response = await fetch(`${API_BASE}${endpoint}`, options);
+    if (response.status === 401) { window.location.href = "/login"; throw new Error("Not authenticated"); }
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.error || `Automation request failed: ${response.status}`);
+    return body;
+}
+
+export async function createAutomation(payload) { return mutateAutomation("/automations", "POST", payload); }
+export async function updateAutomation(id, payload) { return mutateAutomation(`/automations/${encodeURIComponent(id)}`, "PUT", payload); }
+export async function deleteAutomation(id) { return mutateAutomation(`/automations/${encodeURIComponent(id)}`, "DELETE"); }
+export async function runAutomation(id) { return mutateAutomation(`/automations/${encodeURIComponent(id)}/run`, "POST"); }

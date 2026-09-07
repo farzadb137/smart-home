@@ -1,12 +1,13 @@
 import re
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 
 from database import (
     get_connection,
     get_device_history,
     get_device_with_parent,
     get_latest_readings,
+    add_activity,
 )
 from hub_app.auth import login_required
 from hub_app.mqtt_commander import send_device_command
@@ -192,6 +193,14 @@ def send_command(hardware_id_hex):
 	if not ok:
 		return jsonify({"success": False, "error": response.get("error", "Command failed")}), 504
 
+	device = get_device_with_parent(int(hardware_id_hex, 16))
+	add_activity(
+		"command",
+		f"Command sent to {device['device_name'] if device else hardware_id_hex}",
+		user_id=session.get("user_id"),
+		device_id=device["id"] if device else None,
+		metadata={"command": command, "data": payload.get("data")}
+	)
 	return jsonify(response)
 
 @bp.route("/api/devices/<hardware_id_hex>/rename", methods=["POST"])
@@ -219,6 +228,14 @@ def rename_device(hardware_id_hex):
 	if not ok:
 		return jsonify({"success": False, "error": response.get("error", "Rename failed")}), 504
 
+	device = get_device_with_parent(int(hardware_id_hex, 16))
+	add_activity(
+		"device.rename",
+		f"Renamed device to {new_name}",
+		user_id=session.get("user_id"),
+		device_id=device["id"] if device else None,
+		metadata={"name": new_name}
+	)
 	return jsonify(response)
 
 @bp.route("/api/devices/<hardware_id_hex>/history")

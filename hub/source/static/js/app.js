@@ -1,9 +1,7 @@
-import { getHealth, getDevices, getRooms, getSession, logout } from "./api.js";
+import { getHealth, getDevices, getRooms, getActivity, getAutomations, getSession, logout } from "./api.js";
 import { appState } from "./state.js";
 import { renderTopbar } from "./topbar.js";
 import { renderClimate } from "./components/climate.js";
-import { renderDevices } from "./components/devices.js";
-import { updateDeviceCards } from "./components/device-card.js";
 import { renderHomeStatus } from "./components/home-status.js";
 import { renderHomeOverview } from "./components/home-overview.js";
 import { initRouter, onRouteChange } from "./router.js";
@@ -12,6 +10,9 @@ import { initUsersPage } from "./users-page.js";
 import { UI_ICONS } from "./icons.js";
 import { initRoomsPage, refreshRoomsPage } from "./rooms-page.js";
 import { initDiagnostics } from "./diagnostics.js";
+import { initSearch, refreshSearch } from "./search.js";
+import { initActivityPage, refreshActivity } from "./activity.js";
+import { initAutomationsPage, refreshAutomations } from "./automations-page.js";
 
 // Install before DOM work so browser-injected performance tooling errors are
 // handled even if they fire during page startup.
@@ -68,12 +69,6 @@ function updateDashboard(source = "manual") {
         }, { refreshHistory: source !== "poll" });
     }
 
-    const devicesContainer = document.querySelector(".devices-list");
-    if (source === "poll" && devicesContainer) {
-        updateDeviceCards(devicesContainer, appState.devices);
-    } else {
-        renderDevices(appState.devices);
-    }
     refreshDevicesPage({ source });
     refreshRoomsPage({ source });
 }
@@ -105,9 +100,18 @@ async function loadDashboardData() {
         await getHealth();
 
         appState.apiOnline = true;
-        appState.devices = await getDevices();
-        appState.rooms = await getRooms();
+        const [devices, rooms, activity, automations] = await Promise.all([
+            getDevices(),
+            getRooms(),
+            getActivity(8),
+            getAutomations()
+        ]);
+        appState.devices = Array.isArray(devices) ? devices : [];
+        appState.rooms = Array.isArray(rooms) ? rooms : [];
+        appState.activity = Array.isArray(activity) ? activity : (Array.isArray(activity?.items) ? activity.items : []);
+        appState.automations = Array.isArray(automations) ? automations : [];
 
+        refreshSearch();
         updateDashboard(appState.hasLoadedOnce ? "poll" : "initial");
 
     } catch (error) {
@@ -126,10 +130,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     renderUiIcons();
     await loadUserSession();
     renderTopbar(appState.userName);
+    initSearch();
 
     initDevicesPage(onRouteChange);
     initUsersPage();
     initRoomsPage(onRouteChange);
+    initActivityPage();
+    initAutomationsPage();
+    onRouteChange(route => {
+        if (route.name === "activity" && route.param === null) refreshActivity(document.getElementById("activity-page"));
+        if (route.name === "automations" && route.param === null) refreshAutomations(document.getElementById("automations-page"));
+    });
     initRouter();
 
     document.querySelectorAll("[data-scroll-target]").forEach(link => {

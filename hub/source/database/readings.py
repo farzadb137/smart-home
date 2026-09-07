@@ -56,6 +56,46 @@ def get_latest_readings(device_ids):
 		}
 	return result
 
+def get_latest_readings_by_hardware_ids(hardware_ids):
+	if not hardware_ids:
+		return {}
+	connection = get_connection()
+	normalized = [str(value).upper() for value in hardware_ids]
+	placeholders = ",".join("?" for _ in normalized)
+	rows = connection.execute(
+		f"""
+		SELECT
+			d.hardware_id,
+			r.capability,
+			r.value,
+			r.timestamp
+		FROM readings r
+		JOIN devices d ON d.id = r.device_id
+		INNER JOIN (
+			SELECT
+				device_id,
+				capability,
+				MAX(timestamp) AS max_timestamp
+			FROM readings
+			GROUP BY device_id, capability
+		) latest
+			ON r.device_id = latest.device_id
+			AND r.capability = latest.capability
+			AND r.timestamp = latest.max_timestamp
+		WHERE printf('%012X', d.hardware_id) IN ({placeholders})
+		""",
+		normalized
+	).fetchall()
+	connection.close()
+	result = {}
+	for row in rows:
+		hardware_id = f"{row['hardware_id']:012X}"
+		result.setdefault(hardware_id, {})[row['capability']] = {
+			"value": row["value"],
+			"timestamp": row["timestamp"]
+		}
+	return result
+
 def get_device_history(hardware_id, capability, range_key):
 	now = datetime.now(timezone.utc)
 	connection = get_connection()
