@@ -29,6 +29,16 @@ OFFLINE_CHECK_INTERVAL_SEC = 5
 
 mqtt_connected = threading.Event()
 
+def automation_scheduler():
+    from hub_app.automation_engine import evaluate_schedules
+    while True:
+        try:
+            evaluate_schedules()
+        except Exception as error:
+            print(f"[AUTOMATION] Scheduler error: {error}")
+        time.sleep(20)
+
+
 def offline_monitor():
     while True:
         try:
@@ -117,6 +127,11 @@ def handle_telemetry(message, parent_hardware_id=None):
         device_id = get_or_create_device(hardware_id, device_name, device_type, firmware, parent_device_id)
         for capability_name, reading in capabilities.items():
             save_reading(device_id, capability_name, reading.get("value"), reading.get("valid"), rssi, uptime, device_timestamp)
+        try:
+            from hub_app.automation_engine import evaluate_telemetry
+            evaluate_telemetry(f"{hardware_id:012X}", capabilities)
+        except Exception as error:
+            print(f"[AUTOMATION] Evaluation error: {error}")
         print(f"[DB] Reading(s) saved(device_id={device_id})")
     except Exception as error:
         print(f"[DB] Failed to save reading: {error}")
@@ -165,6 +180,7 @@ def create_mqtt_client():
 
 def start_background_tasks(client):
     threading.Thread(target=offline_monitor, name="offline_monitor", daemon=True).start()
+    threading.Thread(target=automation_scheduler, name="automation_scheduler", daemon=True).start()
     threading.Thread(target=time_sync_publisher, args=(client,), name="time_sync_publisher", daemon=True).start()
 
 def main():

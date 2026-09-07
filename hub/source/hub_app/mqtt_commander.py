@@ -14,8 +14,8 @@ class MqttCommander:
 		self._lock = threading.Lock()
 		self._client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 		self._client.username_pw_set(HUB_COMMANDER_USERNAME, HUB_COMMANDER_PASSWORD)
-		self._client.on_connect = self.on_connect
-		self._client.on_message = self.on_message
+		self._client.on_connect = self._on_connect
+		self._client.on_message = self._on_message
 		self._client.connect(BROKER_HOST, BROKER_PORT, 60)
 		self._client.loop_start()
 
@@ -52,7 +52,7 @@ class MqttCommander:
 			else:
 				topic = f"home/devices/{hardware_id_hex}/command"
 
-			slef._client.publish(topic, json.dumps(command_payload), qos=1)
+			self._client.publish(topic, json.dumps(command_payload), qos=1)
 			try:
 				raw = response_queue.get(timeout=COMMAND_RESPONSE_TIMEOUT_SEC)
 				return True, json.loads(raw)

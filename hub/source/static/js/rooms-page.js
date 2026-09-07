@@ -72,24 +72,28 @@ function unassignedDevices() {
 }
 
 function renderPageShell(container, roomCount, deviceCount) {
+    const onlineCount = appState.devices.filter(device => device.online).length;
+    const unassignedCount = unassignedDevices().length;
     container.innerHTML = `
         <section class="page-header rooms-page-header">
             <div>
                 <p class="card-label">YOUR HOME</p>
                 <h1>Rooms</h1>
-                <p class="page-header-summary">Organize devices by physical space. Create rooms, rename them, and assign devices without leaving this view.</p>
+                <p class="page-header-summary">Organize your home by physical space. Open a room to control its devices, inspect live readings, or move hardware between rooms.</p>
             </div>
             <div class="page-header-actions">
                 <div class="page-header-metrics" aria-label="Room summary">
                     <span><strong>${roomCount}</strong> ${roomCount === 1 ? "room" : "rooms"}</span>
-                    <span><strong>${deviceCount}</strong> ${deviceCount === 1 ? "device" : "devices"}</span>
+                    <span><strong>${onlineCount}</strong> online</span>
+                    <span><strong>${unassignedCount}</strong> unassigned</span>
                 </div>
                 <button class="button button-primary" type="button" data-action="create-room">${UI_ICONS.plus} New room</button>
             </div>
         </section>
         <section class="card rooms-page-card">
-            <div class="card-header">
-                <div><p class="card-label">SPACES</p><h2>All Rooms</h2></div>
+            <div class="card-header rooms-section-header">
+                <div><p class="card-label">SPACES</p><h2>Your rooms</h2><p>Choose a room to see its devices and live conditions.</p></div>
+                <span class="detail-count">${roomCount}</span>
             </div>
             <div id="rooms-page-grid"></div>
         </section>
@@ -230,48 +234,73 @@ async function runRoomSwitchCommand(container, room, value) {
 function renderRoomDetail(container, room) {
     const metrics = getRoomMetrics(room);
     const devices = metrics.devices;
+    const controls = devices.filter(device => Object.prototype.hasOwnProperty.call(device.readings || {}, "switch") || Object.prototype.hasOwnProperty.call(device.readings || {}, "brightness"));
+    const sensors = devices.filter(device => !controls.includes(device));
     const availableDevices = appState.devices.filter(device => String(roomIdOf(device)) !== String(room.id));
     const roomIcon = UI_ICONS[room.icon] || UI_ICONS.room;
     container.innerHTML = `
         <section class="page-header rooms-page-header room-detail-header">
-            <div>
+            <div class="room-detail-heading-block">
                 <a class="back-link" href="#rooms">← All rooms</a>
                 <div class="room-detail-title">
                     <span class="room-detail-icon" aria-hidden="true">${roomIcon}</span>
-                    <div><p class="card-label">ROOM</p><h1>${escapeHtml(room.name)}</h1></div>
+                    <div><p class="card-label">ROOM</p><h1>${escapeHtml(room.name)}</h1><p class="page-header-summary">${devices.length} ${devices.length === 1 ? "device" : "devices"} · ${metrics.online} online${metrics.offline ? ` · ${metrics.offline} offline` : ""}</p></div>
                 </div>
-                <p class="page-header-summary">${devices.length} ${devices.length === 1 ? "device" : "devices"} · ${metrics.online} online${metrics.offline ? ` · ${metrics.offline} offline` : ""}</p>
             </div>
             <div class="page-header-actions room-detail-actions">
-                <button class="button" type="button" data-action="edit-room">${UI_ICONS.edit} Rename</button>
+                <button class="button" type="button" data-action="edit-room">${UI_ICONS.edit} Edit room</button>
                 <button class="button button-danger" type="button" data-action="delete-room">${UI_ICONS.trash} Delete</button>
             </div>
         </section>
-        <section class="room-overview-grid">
-            <div class="card room-overview-card"><span class="room-overview-icon">${UI_ICONS.devices}</span><div><span>Devices</span><strong>${devices.length}</strong><small>${metrics.online} online${metrics.offline ? ` · ${metrics.offline} offline` : ""}</small></div></div>
-            <div class="card room-overview-card"><span class="room-overview-icon">${UI_ICONS.activity}</span><div><span>Switches on</span><strong>${metrics.activeSwitches.length}</strong><small>${metrics.switches.length ? `${metrics.switches.length} switch${metrics.switches.length === 1 ? "" : "es"} available` : "No switches"}</small></div></div>
-            <div class="card room-overview-card"><span class="room-overview-icon">${CAPABILITY_ICONS.temperature}</span><div><span>Temperature</span><strong>${metrics.temperature}</strong><small>Room reading</small></div></div>
-            <div class="card room-overview-card"><span class="room-overview-icon">${CAPABILITY_ICONS.humidity}</span><div><span>Humidity</span><strong>${metrics.humidity}</strong><small>Room reading</small></div></div>
-        </section>
-        <section class="card room-quick-controls">
-            <div class="card-header"><div><p class="card-label">QUICK CONTROLS</p><h2>Room switches</h2><p>Control all online switches in this room at once.</p></div><span class="detail-count">${metrics.switches.length}</span></div>
-            <div class="room-quick-controls-actions">
-                <button class="button button-primary" type="button" data-room-command="on" ${metrics.switches.length ? "" : "disabled"}>Turn all on</button>
-                <button class="button" type="button" data-room-command="off" ${metrics.switches.length ? "" : "disabled"}>Turn all off</button>
+
+        <section class="room-detail-overview">
+            <div class="room-overview-grid">
+                <div class="card room-overview-card"><span class="room-overview-icon">${UI_ICONS.devices}</span><div><span>Devices</span><strong>${devices.length}</strong><small>${metrics.online} online${metrics.offline ? ` · ${metrics.offline} offline` : ""}</small></div></div>
+                <div class="card room-overview-card"><span class="room-overview-icon">${UI_ICONS.activity}</span><div><span>Active switches</span><strong>${metrics.activeSwitches.length}</strong><small>${metrics.switches.length ? `${metrics.switches.length} switch${metrics.switches.length === 1 ? "" : "es"} available` : "No switches"}</small></div></div>
+                <div class="card room-overview-card"><span class="room-overview-icon">${CAPABILITY_ICONS.temperature}</span><div><span>Temperature</span><strong>${metrics.temperature}</strong><small>Latest room reading</small></div></div>
+                <div class="card room-overview-card"><span class="room-overview-icon">${CAPABILITY_ICONS.humidity}</span><div><span>Humidity</span><strong>${metrics.humidity}</strong><small>Latest room reading</small></div></div>
             </div>
-            <p class="form-message room-command-message" data-room-command-message role="status"></p>
         </section>
-        <section class="card room-detail-card">
-            <div class="card-header"><div><p class="card-label">CONTROLS</p><h2>Devices in ${escapeHtml(room.name)}</h2><p>Control a device here or open its name for detailed settings.</p></div><span class="detail-count">${devices.length}</span></div>
-            <div id="room-detail-devices"></div>
+
+        <section class="room-detail-main-grid">
+            <section class="card room-quick-controls room-detail-panel">
+                <div class="card-header"><div><p class="card-label">QUICK CONTROLS</p><h2>Room control</h2><p>Operate every online switch in this room together.</p></div><span class="detail-count">${metrics.switches.length}</span></div>
+                <div class="room-quick-controls-actions">
+                    <button class="button button-primary" type="button" data-room-command="on" ${metrics.switches.length ? "" : "disabled"}>Turn all on</button>
+                    <button class="button" type="button" data-room-command="off" ${metrics.switches.length ? "" : "disabled"}>Turn all off</button>
+                </div>
+                <div class="room-control-state"><span class="room-control-state-dot"></span><span data-room-command-message>${metrics.switches.length ? `${metrics.activeSwitches.length}/${metrics.switches.length} switches on` : "No controllable switches"}</span></div>
+            </section>
+            <section class="card room-detail-panel room-environment-panel">
+                <div class="card-header"><div><p class="card-label">ENVIRONMENT</p><h2>Room conditions</h2><p>Latest readings reported by devices in this room.</p></div></div>
+                <div class="room-environment-values">
+                    <div><span class="room-environment-icon">${CAPABILITY_ICONS.temperature}</span><div><small>Temperature</small><strong data-room-temperature>${metrics.temperature}</strong></div></div>
+                    <div><span class="room-environment-icon">${CAPABILITY_ICONS.humidity}</span><div><small>Humidity</small><strong data-room-humidity>${metrics.humidity}</strong></div></div>
+                </div>
+            </section>
         </section>
+
+        <section class="card room-detail-card room-devices-panel">
+            <div class="card-header room-devices-header"><div><p class="card-label">DEVICES</p><h2>Devices in ${escapeHtml(room.name)}</h2><p>Use the controls directly, or select a device name for detailed settings.</p></div><span class="detail-count">${devices.length}</span></div>
+            <div class="room-device-group" data-room-device-group="controls" ${controls.length ? "" : "hidden"}>
+                <div class="room-device-group-heading"><div><h3>Controls</h3><span>Devices you can operate from this room</span></div><strong>${controls.length}</strong></div>
+                <div id="room-detail-controls"></div>
+            </div>
+            <div class="room-device-group" data-room-device-group="sensors" ${sensors.length ? "" : "hidden"}>
+                <div class="room-device-group-heading"><div><h3>Monitoring</h3><span>Live readings from sensors and other devices</span></div><strong>${sensors.length}</strong></div>
+                <div id="room-detail-sensors"></div>
+            </div>
+            ${devices.length ? "" : `<div class="empty-state"><strong>No devices in this room.</strong><p>Assign a device below to start using this room.</p></div>`}
+        </section>
+
         <section class="card room-assignment-card">
-            <div class="card-header"><div><p class="card-label">ORGANIZE</p><h2>Assign a device</h2><p>Move an existing device into this room.</p></div></div>
-            ${availableDevices.length ? `<form data-assign-form class="room-assignment-form"><select name="hardware_id" required><option value="">Choose a device…</option>${availableDevices.map(device => `<option value="${escapeHtml(device.hardware_id_hex)}">${escapeHtml(formatDeviceName(device.name))}${roomIdOf(device) != null ? ` · from ${escapeHtml(roomNameOf(device) || "another room")}` : " · unassigned"}</option>`).join("")}</select><button class="button button-primary" type="submit">Assign</button><p class="form-message" data-room-message role="status"></p></form>` : `<div class="empty-state"><strong>All devices are already in this room.</strong><p>There are no other devices available to assign.</p></div>`}
+            <div class="card-header"><div><p class="card-label">ORGANIZE</p><h2>Add a device to this room</h2><p>Move an existing device here without changing its settings.</p></div></div>
+            ${availableDevices.length ? `<form data-assign-form class="room-assignment-form"><select name="hardware_id" required><option value="">Choose a device…</option>${availableDevices.map(device => `<option value="${escapeHtml(device.hardware_id_hex)}">${escapeHtml(formatDeviceName(device.name))}${roomIdOf(device) != null ? ` · from ${escapeHtml(roomNameOf(device) || "another room")}` : " · unassigned"}</option>`).join("")}</select><button class="button button-primary" type="submit">Assign device</button><p class="form-message" data-room-message role="status"></p></form>` : `<div class="empty-state"><strong>All devices are already in this room.</strong><p>There are no other devices available to assign.</p></div>`}
         </section>
         <div id="rooms-form-host"></div>
     `;
-    renderDeviceCards(container.querySelector("#room-detail-devices"), devices, { link: true, emptyTitle: "No devices in this room", emptyText: "Use the assignment control below to add a device." });
+    renderDeviceCards(container.querySelector("#room-detail-controls"), controls, { link: true });
+    renderDeviceCards(container.querySelector("#room-detail-sensors"), sensors, { link: true });
 
     container.querySelectorAll("[data-room-command]").forEach(button => {
         button.addEventListener("click", () => runRoomSwitchCommand(container, room, button.dataset.roomCommand === "on" ? 1 : 0));
@@ -366,7 +395,16 @@ function patchRoomDetail(room) {
         overviewCards[3].querySelector("strong").textContent = metrics.humidity;
     }
 
-    updateDeviceCards(container.querySelector("#room-detail-devices"), metrics.devices);
+    const controls = metrics.devices.filter(device => Object.prototype.hasOwnProperty.call(device.readings || {}, "switch") || Object.prototype.hasOwnProperty.call(device.readings || {}, "brightness"));
+    const sensors = metrics.devices.filter(device => !controls.includes(device));
+    updateDeviceCards(container.querySelector("#room-detail-controls"), controls);
+    updateDeviceCards(container.querySelector("#room-detail-sensors"), sensors);
+    const temp = container.querySelector("[data-room-temperature]");
+    const humidity = container.querySelector("[data-room-humidity]");
+    if (temp) temp.textContent = metrics.temperature;
+    if (humidity) humidity.textContent = metrics.humidity;
+    const commandMessage = container.querySelector("[data-room-command-message]");
+    if (commandMessage && !container.querySelector("[data-room-command-message]")?.dataset.busy) commandMessage.textContent = metrics.switches.length ? `${metrics.activeSwitches.length}/${metrics.switches.length} switches on` : "No controllable switches";
 }
 
 function patchRoomsList(rooms) {

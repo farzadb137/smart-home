@@ -1,6 +1,7 @@
 import { UI_ICONS } from "../icons.js";
 import { sendDeviceCommand } from "../api.js";
 import { setPendingCommand, clearPendingCommand } from "../state.js";
+import { formatDeviceName } from "../utils.js"
 
 function roomIcon(room) {
     return UI_ICONS[room.icon] || UI_ICONS.room;
@@ -24,22 +25,33 @@ export function createRoomCard(room, options = {}) {
     const quickControls = options.quickControls === true;
     const switches = switchDevices(room);
     const activeSwitches = switches.filter(device => Boolean(device.readings?.switch?.value));
+    const offlineCount = Math.max(0, (room.deviceCount || 0) - (room.onlineCount || 0));
+    const previewDevices = (room.devices || []).slice(0, 3);
 
     card.innerHTML = `
         <div class="room-card-top">
-            <span class="room-card-icon" aria-hidden="true">${roomIcon(room)}</span>
-            <a class="room-card-arrow-link" href="${roomHref(room)}" aria-label="Open ${escapeHtml(room.name)}">→</a>
+            <a class="room-card-icon-link" href="${roomHref(room)}" aria-label="Open ${escapeHtml(room.name)}">
+                <span class="room-card-icon" aria-hidden="true">${roomIcon(room)}</span>
+            </a>
+            <div class="room-card-top-right">
+                <span class="room-status-pill ${offlineCount ? "is-warning" : "is-online"}"><i></i>${offlineCount ? `${offlineCount} offline` : "All online"}</span>
+                <a class="room-card-arrow-link" href="${roomHref(room)}" aria-label="Open ${escapeHtml(room.name)}">→</a>
+            </div>
         </div>
         <a class="room-card-title-link" href="${roomHref(room)}"><h3>${escapeHtml(room.name)}</h3></a>
-        <p>${room.deviceCount} ${room.deviceCount === 1 ? "device" : "devices"} · ${room.deviceCount ? `${room.onlineCount} online` : "No devices"}</p>
-        ${room.summary ? `<span class="room-card-summary">${escapeHtml(room.summary)}</span>` : ""}
+        <p class="room-card-meta">${room.deviceCount} ${room.deviceCount === 1 ? "device" : "devices"} · ${room.onlineCount} online</p>
+        ${room.summary ? `<span class="room-card-summary">${escapeHtml(room.summary)}</span>` : `<span class="room-card-summary room-card-summary-muted">No environmental readings</span>`}
+        <div class="room-card-device-preview">
+            ${previewDevices.length ? previewDevices.map(device => `<span class="room-device-chip">${escapeHtml(formatDeviceName(device.name))}</span>`).join("") : `<span class="room-device-chip room-device-chip-muted">No devices assigned</span>`}
+            ${room.deviceCount > previewDevices.length ? `<span class="room-device-chip room-device-chip-more">+${room.deviceCount - previewDevices.length}</span>` : ""}
+        </div>
         ${quickControls && switches.length ? `
             <div class="room-card-controls" data-room-controls>
                 <button class="button room-card-control-button ${activeSwitches.length ? "button-primary" : ""}" type="button" data-room-quick="on">On</button>
                 <button class="button room-card-control-button" type="button" data-room-quick="off">Off</button>
                 <span class="room-card-control-status" data-room-control-status role="status">${activeSwitches.length}/${switches.length} on</span>
             </div>
-        ` : quickControls ? `<div class="room-card-no-controls">No online switches</div>` : ""}
+        ` : quickControls ? `<div class="room-card-no-controls">No online switches</div>` : `<a class="room-card-open-link" href="${roomHref(room)}">Open room <span>→</span></a>`}
     `;
 
     if (quickControls && switches.length) {
@@ -89,21 +101,29 @@ export function updateRoomCards(container, rooms) {
         const meta = card.querySelector("p");
         const icon = card.querySelector(".room-card-icon");
         const existingSummary = card.querySelector(".room-card-summary");
-        if (title) title.textContent = room.name;
-        const titleLink = card.querySelector(".room-card-title-link");
-        const arrowLink = card.querySelector(".room-card-arrow-link");
         const href = roomHref(room);
-        if (titleLink) titleLink.href = href;
-        if (arrowLink) arrowLink.href = href;
+        if (title) title.textContent = room.name;
+        card.querySelectorAll(".room-card-title-link, .room-card-arrow-link, .room-card-icon-link, .room-card-open-link").forEach(link => { link.href = href; });
         if (meta) meta.textContent = `${room.deviceCount} ${room.deviceCount === 1 ? "device" : "devices"} · ${onlineLabel}`;
         if (icon) icon.innerHTML = roomIcon(room);
+        const statusPill = card.querySelector(".room-status-pill");
+        if (statusPill) {
+            const offlineCount = Math.max(0, (room.deviceCount || 0) - (room.onlineCount || 0));
+            statusPill.classList.toggle("is-warning", offlineCount > 0);
+            statusPill.classList.toggle("is-online", offlineCount === 0);
+            statusPill.innerHTML = `<i></i>${offlineCount ? `${offlineCount} offline` : "All online"}`;
+        }
         if (existingSummary && room.summary) existingSummary.textContent = room.summary;
-        else if (existingSummary && !room.summary) existingSummary.remove();
-        else if (!existingSummary && room.summary) {
-            const summary = document.createElement("span");
-            summary.className = "room-card-summary";
-            summary.textContent = room.summary;
-            card.append(summary);
+        else if (existingSummary && !room.summary) existingSummary.textContent = "No environmental readings";
+        const preview = card.querySelector(".room-card-device-preview");
+        if (preview) {
+            const previewDevices = (room.devices || []).slice(0, 3);
+            preview.innerHTML = previewDevices.length
+                ? previewDevices.map(device => `<span class="room-device-chip">${escapeHtml(formatDeviceName(device.name))}</span>`).join("")
+                : `<span class="room-device-chip room-device-chip-muted">No devices assigned</span>`;
+            if (room.deviceCount > previewDevices.length) {
+                preview.insertAdjacentHTML("beforeend", `<span class="room-device-chip room-device-chip-more">+${room.deviceCount - previewDevices.length}</span>`);
+            }
         }
         updateRoomQuickControlState(card, room);
     });

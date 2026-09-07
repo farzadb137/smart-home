@@ -42,6 +42,7 @@ def get_device_with_parent(hardware_id):
 			d.id,
 			d.hardware_id,
 			d.parent_device_id,
+			d.device_name,
 			p.hardware_id AS parent_hardware_id
 		FROM devices d
 		LEFT JOIN devices p ON p.id = d.parent_device_id

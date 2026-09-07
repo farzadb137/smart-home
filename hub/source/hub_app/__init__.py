@@ -2,6 +2,8 @@ from flask import Flask, redirect, session
 
 from database import is_setup_complete
 
+from hub_app.activity import bp as activity_bp
+from hub_app.automations import bp as automations_bp
 from hub_app.auth import bp as auth_bp
 from hub_app.devices import bp as devices_bp
 from hub_app.firmware import bp as firmware_bp
@@ -16,6 +18,8 @@ def create_app():
 	app.config.update(flask_settings())
 
 	app.register_blueprint(auth_bp)
+	app.register_blueprint(activity_bp)
+	app.register_blueprint(automations_bp)
 	app.register_blueprint(devices_bp)
 	app.register_blueprint(firmware_bp)
 	app.register_blueprint(provisioning_bp)

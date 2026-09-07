@@ -37,6 +37,18 @@
                             <span>Devices</span>
                         </a>
                     </li>
+                    <li>
+                        <a href="#automations" class="nav-item" data-route="automations">
+                            <span class="nav-icon" data-icon="automation" aria-hidden="true"></span>
+                            <span>Automations</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#activity" class="nav-item" data-route="activity">
+                            <span class="nav-icon" data-icon="activity" aria-hidden="true"></span>
+                            <span>Activity</span>
+                        </a>
+                    </li>
                 </ul>
 
                 <p class="nav-title">SYSTEM</p>
@@ -66,37 +78,40 @@
                     <h2 class="greeting-text">Good Evening</h2>
                     <p class="topbar-date"></p>
                 </div>
-                <div class="topbar-time"></div>
+                <div class="topbar-actions">
+                    <button id="global-search-button" class="topbar-search-button" type="button" aria-label="Open quick search">
+                        <span class="topbar-search-icon" data-icon="search" aria-hidden="true"></span>
+                        <span class="topbar-search-label">Search</span>
+                        <kbd>Ctrl K</kbd>
+                    </button>
+                    <div class="topbar-time"></div>
+                </div>
             </header>
 
             <section class="view" data-view="overview">
                 <div class="dashboard-grid">
                     <section class="card home-status-card home-hero" data-state="normal" aria-labelledby="home-status-title">
                         <div class="home-hero-main">
-                            <div class="home-status-icon" data-status-icon="check" aria-hidden="true"></div>
+                            <div class="home-hero-icon" data-home-hero-icon aria-hidden="true"></div>
                             <div>
-                                <p class="card-label home-status-label">HOME STATUS</p>
-                                <h1 class="home-status-title" id="home-status-title">Checking your home</h1>
-                                <p class="home-status-summary" id="home-status-summary">Connecting to the hub…</p>
+                                <p class="card-label home-status-label">YOUR SMART HOME</p>
+                                <h1 class="home-status-title" id="home-hero-greeting">Good evening</h1>
+                                <p class="home-status-summary" id="home-status-summary">Everything is being checked. Your home status will appear here.</p>
+                                <p class="home-hero-date" id="home-hero-date"></p>
                             </div>
                         </div>
-                        <div class="home-overview-metrics" aria-label="Home device summary">
-                            <div class="home-metric">
-                                <strong id="home-device-count">0</strong>
-                                <span>Devices</span>
-                            </div>
-                            <div class="home-metric">
-                                <strong id="home-online-count">0</strong>
-                                <span>Online</span>
-                            </div>
-                            <div class="home-metric">
-                                <strong id="home-offline-count">0</strong>
-                                <span>Offline</span>
-                            </div>
+                        <div class="home-overview-metrics" aria-label="Home summary">
+                            <div class="home-metric"><strong id="home-device-count">0</strong><span>Devices</span></div>
+                            <div class="home-metric"><strong id="home-online-count">0</strong><span>Online</span></div>
+                            <div class="home-metric"><strong id="home-hero-rooms">0</strong><span>Rooms</span></div>
+                            <div class="home-metric home-metric-attention"><strong id="home-hero-attention">0</strong><span>Attention</span></div>
                         </div>
                         <div class="home-status-footer">
                             <span class="status-dot"></span>
                             <span id="home-status-detail">Checking systems…</span>
+                            <span class="home-hero-footer-spacer"></span>
+                            <span class="home-hero-automation"><strong id="home-hero-automations">0</strong> active automations</span>
+                            <a href="#activity" data-route="activity">View activity →</a>
                         </div>
                     </section>
 
@@ -143,17 +158,6 @@
                         </div>
                     </section>
 
-                    <section class="card quick-controls-card">
-                        <div class="section-heading">
-                            <div>
-                                <p class="card-label">QUICK CONTROLS</p>
-                                <h2>Favorites</h2>
-                            </div>
-                            <a href="#devices" class="section-link" data-route="devices">All devices</a>
-                        </div>
-                        <div class="quick-controls-list"></div>
-                    </section>
-
                     <section class="card rooms-card" id="rooms-section">
                         <div class="section-heading">
                             <div>
@@ -168,39 +172,35 @@
                                 <span class="empty-state-icon" data-icon="room" aria-hidden="true"></span>
                                 <div>
                                     <strong>No rooms configured yet</strong>
-                                    <p>Room grouping is ready for the next backend step. Once rooms are available, this section will become your main way to navigate the home.</p>
+                                    <p>Rooms are the main way to navigate your home. Open a room to control its devices and see live conditions.</p>
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    <section class="card devices-card">
-                        <div class="card-header">
-                            <div>
-                                <p class="card-label">DEVICES</p>
-                                <h2>All Connected Devices</h2>
-                            </div>
-                            <a href="/add-device" class="detail-btn">+ Add device</a>
-                        </div>
-                        <div class="devices-list"></div>
-                    </section>
-
-                    <section class="card activity-card">
+                    <section class="card quick-controls-card">
                         <div class="section-heading">
                             <div>
-                                <p class="card-label">TIMELINE</p>
-                                <h2>Recent Activity</h2>
-                                <p>Important events from your home will appear here.</p>
+                                <p class="card-label">QUICK CONTROLS</p>
+                                <h2>Quick controls</h2>
+                                <p>Favorite switches and frequently used devices.</p>
                             </div>
+                            <a href="#devices" class="section-link" data-route="devices">All devices</a>
                         </div>
-                        <div class="empty-state activity-empty-state">
-                            <span class="empty-state-icon" data-icon="activity" aria-hidden="true"></span>
-                            <div>
-                                <strong>No recent activity yet</strong>
-                                <p>Event history is not exposed by the current API. We will connect this section when the activity model is added.</p>
-                            </div>
-                        </div>
+                        <div class="quick-controls-list"></div>
                     </section>
+
+                    <section class="card home-insights-card">
+                        <div class="section-heading">
+                            <div>
+                                <p class="card-label">HOME OVERVIEW</p>
+                                <h2>At a glance</h2>
+                                <p>See what needs attention and what your home has been doing.</p>
+                            </div>
+                        </div>
+                        <div class="home-insights-content"></div>
+                    </section>
+
                 </div>
             </section>
 
@@ -209,6 +209,12 @@
             </section>
             <section class="view" data-view="devices" style="display:none;">
                 <div id="devices-page"></div>
+            </section>
+            <section class="view" data-view="automations" style="display:none;">
+                <div id="automations-page"></div>
+            </section>
+            <section class="view" data-view="activity" style="display:none;">
+                <div id="activity-page"></div>
             </section>
             <section class="view" data-view="settings" style="display:none;">
                 <div id="settings-page"></div>

@@ -108,6 +108,45 @@ def init_database():
 	)
 	connection.execute(
 		"""
+		CREATE TABLE IF NOT EXISTS activity_log(
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			event_type TEXT NOT NULL,
+			message TEXT NOT NULL,
+			user_id INTEGER,
+			device_id INTEGER,
+			room_id INTEGER,
+			metadata TEXT NOT NULL DEFAULT '{}',
+			created_at TEXT NOT NULL,
+			FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+			FOREIGN KEY (device_id) REFERENCES devices(id) ON DELETE SET NULL,
+			FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE SET NULL
+			)
+		"""
+	)
+	connection.execute(
+		"CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log (created_at)"
+	)
+	connection.execute(
+		"CREATE INDEX IF NOT EXISTS idx_activity_log_device_log ON activity_log (device_id)"
+	)
+	connection.execute(
+		"""
+		CREATE TABLE IF NOT EXISTS automations(
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			name TEXT NOT NULL,
+			enabled INTEGER NOT NULL DEFAULT 1,
+			config TEXT NOT NULL,
+			created_at TEXT NOT NULL,
+			updated_at TEXT NOT NULL,
+			last_triggered_at TEXT
+			)
+		"""
+	)
+	connection.execute(
+		"CREATE INDEX IF NOT EXISTS idx_automations_enabled On automations (enabled)"
+	)
+	connection.execute(
+		"""
 		CREATE TABLE IF NOT EXISTS system_settings(
 			key TEXT PRIMARY KEY,
 			value TEXT NOT NULL

@@ -160,6 +160,34 @@
     font-size: 13px;
 }
 
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.topbar-search-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    padding: 7px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    background: rgba(255,255,255,.025);
+    color: var(--color-text-muted);
+    cursor: pointer;
+}
+.topbar-search-button:hover { border-color: rgba(230,161,92,.45); color: var(--color-text); }
+.topbar-search-icon { width: 17px; height: 17px; }
+.topbar-search-icon svg { width: 100%; height: 100%; }
+.topbar-search-button kbd {
+    padding: 2px 5px;
+    border: 1px solid var(--color-border);
+    border-radius: 5px;
+    color: var(--color-text-muted);
+    font: 10px var(--font-body);
+}
 .topbar-time {
     color: var(--color-primary);
     font-family: var(--font-display);

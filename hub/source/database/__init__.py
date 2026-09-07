@@ -18,9 +18,12 @@ from .rooms import (
 from .readings import (
 	get_device_history,
 	get_latest_readings,
+	get_latest_readings_by_hardware_ids,
 	rollup_and_prune,
 	save_reading
 )
+from .activity import add_activity, list_activity
+from .automations import (create_automation, delete_automation, get_automation, list_automations, mark_triggered, update_automation)
 from .schema import CURRENT_SCHEMA_VERSION, init_database, migrate_database
 from .users import (
 	count_enabled_administrators,
@@ -44,6 +47,7 @@ __all__ = [
 	"get_device_history",
 	"get_device_with_parent",
 	"get_latest_readings",
+	"get_latest_readings_by_hardware_ids",
 	"get_or_create_device",
 	"get_user",
 	"get_user_by_id",
@@ -68,5 +72,13 @@ __all__ = [
 	"delete_room",
 	"get_room",
 	"list_rooms",
-	"update_room"
+	"update_room",
+	"add_activity",
+	"list_activity",
+	"create_automation",
+	"delete_automation",
+	"get_automation",
+	"list_automations",
+	"mark_triggered",
+	"update_automation"
 ]
