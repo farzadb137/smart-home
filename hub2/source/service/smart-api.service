@@ -1,0 +1,22 @@
+[Unit]
+Description=Smart Hub - Flask API
+After=network-online.target smart-collector.service
+Wants=network-online.target smart-collector.service
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=farzad
+Group=farzad
+EnvironmentFile=/etc/smart-hub/secrets.env
+WorkingDirectory=/home/farzad/smart-hub/source
+ExecStart=/home/farzad/smart-hub/.venv/bin/python3 /home/farzad/smart-hub/source/api.py
+
+Restart=on-failure
+RestartSec=5
+
+PrivateTmp=yes
+
+[Install]
+WantedBy=smart.target

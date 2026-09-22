@@ -1,0 +1,137 @@
+/* Smart Home Dashboard - Theme Tokens */
+
+:root {
+    /* Palette */
+    --color-scheme: dark;
+    --color-bg: #061426;
+    --color-surface: #0a1c32;
+    --color-surface-elevated: #0e2742;
+    --color-surface-soft: rgba(16, 43, 70, 0.72);
+    --color-surface-sidebar: rgba(8, 25, 44, 0.98);
+    --color-surface-sidebar-deep: rgba(5, 19, 34, 0.98);
+    --color-surface-status: rgba(15, 42, 68, 0.92);
+    --color-surface-status-deep: rgba(8, 27, 47, 0.9);
+    --color-surface-hover: rgba(52, 101, 151, 0.14);
+    --color-surface-active: linear-gradient(100deg, #2879e8, #3c92ff);
+    --color-surface-danger: rgba(255, 93, 108, 0.06);
+    --color-surface-danger-hover: rgba(255, 93, 108, 0.12);
+    --color-border: rgba(101, 157, 213, 0.22);
+    --color-border-strong: rgba(91, 160, 234, 0.42);
+    --color-border-active: rgba(104, 176, 255, 0.42);
+    --color-border-brand: rgba(104, 176, 255, 0.4);
+    --color-border-danger: rgba(255, 93, 108, 0.45);
+    --color-border-danger-hover: rgba(255, 93, 108, 0.7);
+    --color-text: #f2f7ff;
+    --color-text-on-accent: #ffffff;
+    --color-text-soft: #dcecff;
+    --color-text-muted: #91a8c2;
+    --color-text-subtle: #627b97;
+    --color-primary: #3d91ff;
+    --color-primary-bright: #68b0ff;
+    --color-primary-dark: #2465c5;
+    --color-primary-active-start: #2879e8;
+    --color-primary-active-end: #3c92ff;
+    --color-success: #32d69a;
+    --color-danger: #ff5d6c;
+    --color-warning: #ffb547;
+    --color-brand-start: #3d91ff;
+    --color-brand-end: #2465c5;
+    --color-avatar-start: #294b70;
+    --color-avatar-end: #142e4b;
+    --color-transparent: transparent;
+    --color-black: #000000;
+
+    /* Decorative alpha colors */
+    --color-glow-primary: rgba(61, 145, 255, 0.08);
+    --color-glow-primary-soft: rgba(61, 145, 255, 0.045);
+    --color-glow-primary-strong: rgba(61, 145, 255, 0.28);
+    --color-glow-success: rgba(50, 214, 154, 0.65);
+    --color-shadow: rgba(0, 0, 0, 0.22);
+    --color-shadow-sidebar: rgba(0, 0, 0, 0.14);
+    --color-primary-border-glow: rgba(104, 176, 255, 0.42);
+    --color-primary-hover: rgba(41, 121, 232, 0.25);
+
+    /* Typography */
+    --font-family: Manrope, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-display: Fraunces, Georgia, serif;
+    --font-size-xs: 11px;
+    --font-size-sm: 13px;
+    --font-size-md: 15px;
+    --font-size-lg: 18px;
+    --font-size-xl: 24px;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    /* Spacing */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 28px;
+    --space-8: 32px;
+
+    /* Shape */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
+
+    /* Layout */
+    --page-min-width: 320px;
+    --sidebar-width: 220px;
+    --sidebar-width-collapsed: 76px;
+    --sidebar-padding: 16px;
+
+    /* Effects */
+    --shadow-soft: 0 12px 32px var(--color-shadow);
+    --shadow-glow: 0 0 28px var(--color-glow-primary);
+    --shadow-brand: 0 8px 24px var(--color-glow-primary-strong);
+    --shadow-active: 0 8px 22px var(--color-primary-hover);
+    --transition-fast: 160ms ease;
+
+    /* Dashboard header */
+    --page-padding: 20px;
+    --header-height: 176px;
+    --header-padding: 16px 18px;
+    --radius-xs: 5px;
+    --color-surface-search: rgba(5, 20, 36, 0.68);
+    --color-surface-key: rgba(20, 45, 70, 0.72);
+    --color-surface-success: rgba(50, 214, 154, 0.08);
+    --color-border-success: rgba(50, 214, 154, 0.28);
+    --color-highlight: rgba(255, 255, 255, 0.03);
+    --color-header-overlay: rgba(5, 17, 31, 0.66);
+    --color-header-overlay-soft: rgba(5, 17, 31, 0.28);
+
+    /* Rooms */
+    --color-surface-room: rgba(9, 29, 49, 0.94);
+    --color-surface-room-hover: rgba(14, 39, 66, 0.98);
+    --color-surface-room-overlay: rgba(4, 16, 29, 0.72);
+    --color-border-room: rgba(101, 157, 213, 0.2);
+    --color-temperature: #68b0ff;
+    --color-humidity: #54d8c2;
+    --color-device-icon: #9bb4cf;
+    --color-device-count: #dcecff;
+    --room-card-height: 236px;
+    --room-card-height-compact: 218px;
+    --room-card-height-mobile: 224px;
+    --room-card-padding: 16px;
+    --room-card-padding-compact: 12px;
+    --room-name-size: 19px;
+    --room-metric-size: 14px;
+    --room-device-count-size: 12px;
+    --room-device-gap: 12px;
+    --room-device-icon-box: 44px;
+    --room-device-icon-size: 26px;
+    --color-room-overlay-top: rgba(3, 12, 24, 0.72);
+    --color-room-overlay-bottom: rgba(3, 12, 24, 0.88);
+    --color-room-icon-bg: rgba(5, 20, 36, 0.62);
+    --color-room-icon-border: rgba(255, 255, 255, 0.22);
+    --color-device-icon-bg: rgba(5, 20, 36, 0.56);
+    --color-device-icon-border: rgba(255, 255, 255, 0.16);
+    --text-shadow-room: 0 1px 8px var(--color-shadow);
+    --rooms-gap: 12px;
+}
