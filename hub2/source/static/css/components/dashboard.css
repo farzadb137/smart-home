@@ -1,0 +1,407 @@
+/* Smart Home Dashboard - Quick Actions and Recent Activity */
+
+.dashboard-content {
+    min-width: 0;
+    padding-bottom: 20px;
+}
+
+.dashboard-lower-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.7fr) minmax(330px, 1fr);
+    gap: var(--space-4);
+    margin-top: var(--space-5);
+}
+
+.dashboard-panel {
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background:
+        linear-gradient(145deg, rgba(11, 35, 60, 0.9), rgba(7, 25, 45, 0.96));
+    box-shadow: var(--shadow-soft);
+}
+
+.dashboard-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    min-width: 0;
+    margin-bottom: 14px;
+}
+
+.dashboard-panel-heading {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: var(--space-3);
+}
+
+.dashboard-panel-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    place-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-primary-bright);
+    background: var(--color-surface-soft);
+}
+
+.dashboard-panel-icon .icon {
+    width: 18px;
+    height: 18px;
+}
+
+.dashboard-panel-title {
+    margin: 0;
+    color: var(--color-text);
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: var(--font-weight-semibold);
+    line-height: 1;
+}
+
+.dashboard-panel-subtitle {
+    margin: 4px 0 0;
+    color: var(--color-text-subtle);
+    font-size: 10px;
+    line-height: 1.2;
+}
+
+.dashboard-panel-link {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--color-primary-bright);
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.dashboard-panel-link:hover {
+    border-color: var(--color-border-active);
+    background: var(--color-primary-hover);
+}
+
+.dashboard-panel-link .icon {
+    width: 13px;
+    height: 13px;
+}
+
+.quick-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.quick-action-card {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    min-height: 86px;
+    gap: 11px;
+    padding: 11px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: rgba(13, 38, 64, 0.64);
+    transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+}
+
+.quick-action-card:hover {
+    border-color: var(--color-border-active);
+    background: rgba(18, 48, 79, 0.78);
+    transform: translateY(-1px);
+}
+
+.quick-action-card.is-on {
+    border-color: rgba(104, 176, 255, 0.25);
+}
+
+.quick-action-icon {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    place-items: center;
+    border: 1px solid var(--color-border);
+    border-radius: 50%;
+    color: var(--color-primary-bright);
+    background: rgba(6, 25, 44, 0.72);
+}
+
+.quick-action-card.is-on .quick-action-icon {
+    color: #ffd75a;
+    background: rgba(255, 197, 54, 0.11);
+    border-color: rgba(255, 197, 54, 0.2);
+}
+
+.quick-action-icon .icon {
+    width: 22px;
+    height: 22px;
+}
+
+.quick-action-copy {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.quick-action-copy strong,
+.quick-action-copy span,
+.quick-action-copy em {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.quick-action-copy strong {
+    color: var(--color-text);
+    font-size: 11px;
+    font-weight: var(--font-weight-semibold);
+}
+
+.quick-action-copy span {
+    color: var(--color-text-subtle);
+    font-size: 9px;
+}
+
+.quick-action-copy em {
+    margin-top: 2px;
+    color: var(--color-success);
+    font-size: 9px;
+    font-style: normal;
+    font-weight: var(--font-weight-semibold);
+}
+
+.quick-action-card:not(.is-on) .quick-action-copy em {
+    color: var(--color-text-muted);
+}
+
+.device-toggle {
+    position: relative;
+    display: inline-flex;
+    width: 36px;
+    height: 21px;
+    flex: 0 0 36px;
+    align-items: center;
+    padding: 2px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(88, 119, 150, 0.48);
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.device-toggle span {
+    display: block;
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+    background: #dbeaff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
+    transition: transform var(--transition-fast);
+}
+
+.quick-action-card.is-on .device-toggle {
+    background: var(--color-primary);
+}
+
+.quick-action-card.is-on .device-toggle span {
+    transform: translateX(15px);
+}
+
+.quick-action-arrow {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+    place-items: center;
+    color: var(--color-text-muted);
+    border-radius: 50%;
+    background: rgba(7, 25, 44, 0.55);
+}
+
+.quick-action-arrow .icon {
+    width: 14px;
+    height: 14px;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.activity-item {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto 7px;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: 48px;
+    padding: 6px 0;
+    border-top: 1px solid rgba(101, 157, 213, 0.13);
+}
+
+.activity-item:first-child {
+    border-top: 1px solid var(--color-border);
+}
+
+.activity-icon {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--color-primary-bright);
+    background: rgba(38, 100, 169, 0.18);
+}
+
+.activity-icon .icon {
+    width: 17px;
+    height: 17px;
+}
+
+.activity-icon-success {
+    color: var(--color-success);
+    background: rgba(50, 214, 154, 0.1);
+}
+
+.activity-icon-warning {
+    color: var(--color-warning);
+    background: rgba(255, 181, 71, 0.1);
+}
+
+.activity-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.activity-copy strong {
+    overflow: hidden;
+    color: var(--color-text);
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activity-copy span {
+    overflow: hidden;
+    color: var(--color-text-subtle);
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activity-item time {
+    color: var(--color-text-muted);
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+.activity-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--color-primary);
+}
+
+.activity-dot-success {
+    background: var(--color-success);
+}
+
+.activity-dot-warning {
+    background: var(--color-warning);
+}
+
+@media (max-width: 1100px) {
+    .dashboard-lower-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .quick-actions-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 760px) {
+    .dashboard-lower-grid {
+        gap: var(--space-3);
+        margin-top: var(--space-4);
+    }
+
+    .dashboard-panel {
+        padding: 13px;
+    }
+
+    .dashboard-panel-header {
+        gap: 8px;
+    }
+
+    .dashboard-panel-title {
+        font-size: 18px;
+    }
+
+    .dashboard-panel-subtitle {
+        display: none;
+    }
+
+    .quick-actions-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .quick-action-card {
+        min-height: 72px;
+    }
+}
+
+.quick-actions-grid.is-empty {
+    grid-template-columns: 1fr;
+}
+
+.quick-actions-grid.is-empty .empty-state {
+    width: 100%;
+    min-height: 210px;
+    justify-self: stretch;
+}
+
+.quick-action-card .device-binary-control {
+    grid-template-columns: 25px minmax(34px, 1fr) 26px;
+    width: 96px;
+    min-height: 32px;
+    gap: 5px;
+    padding: 3px 4px;
+}
+
+.quick-action-card .device-binary-icon {
+    width: 25px;
+    height: 25px;
+}
+
+.quick-action-card .device-binary-track {
+    width: 25px;
+    height: 15px;
+}
+
+.quick-action-card .device-binary-track i {
+    width: 9px;
+    height: 9px;
+}
+
+.quick-action-card .device-binary-control.is-active .device-binary-track i {
+    transform: translateX(10px);
+}

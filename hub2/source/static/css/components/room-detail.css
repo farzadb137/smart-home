@@ -1,0 +1,207 @@
+/* Smart Home Dashboard - Room detail view */
+
+.room-detail-page {
+    min-width: 0;
+    padding-bottom: 28px;
+}
+
+.room-detail-hero {
+    position: relative;
+    min-height: 250px;
+    overflow: hidden;
+    border: 1px solid var(--color-border-room);
+    border-radius: var(--radius-lg);
+    background: var(--color-surface-room);
+    box-shadow: var(--shadow-soft);
+    isolation: isolate;
+}
+
+.room-detail-hero-image,
+.room-detail-hero-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.room-detail-hero-image { z-index: -2; object-fit: cover; filter: saturate(.92); }
+.room-detail-hero-overlay { z-index: -1; background: linear-gradient(180deg, rgba(3,12,24,.48), rgba(3,12,24,.22) 40%, rgba(3,12,24,.9)); }
+
+.room-detail-hero-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px;
+}
+
+.room-detail-back,
+.room-detail-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 31px;
+    padding: 0 10px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 999px;
+    color: rgba(255,255,255,.9);
+    background: rgba(5,20,36,.45);
+    backdrop-filter: blur(10px);
+    text-decoration: none;
+    font: inherit;
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+}
+
+.room-detail-back .icon { width: 14px; height: 14px; }
+.room-detail-more { width: 34px; justify-content: center; padding: 0; cursor: pointer; letter-spacing: 1px; }
+
+.room-detail-hero-content {
+    position: absolute;
+    left: 18px;
+    bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.room-detail-icon {
+    display: grid;
+    width: 54px;
+    height: 54px;
+    place-items: center;
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 50%;
+    color: white;
+    background: rgba(5,20,36,.48);
+    backdrop-filter: blur(10px);
+}
+
+.room-detail-icon .icon { width: 27px; height: 27px; }
+.room-detail-hero-content .settings-eyebrow { color: rgba(255,255,255,.7); margin-bottom: 3px; }
+.room-detail-hero-content h2 { margin: 0; color: white; font-family: var(--font-display); font-size: 27px; line-height: 1; }
+.room-detail-hero-content p { margin: 6px 0 0; color: rgba(255,255,255,.75); font-size: 10px; }
+
+.room-detail-hero-metrics {
+    position: absolute;
+    right: 18px;
+    bottom: 20px;
+    display: flex;
+    gap: 7px;
+}
+
+.room-detail-hero-metrics span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 999px;
+    color: white;
+    background: rgba(5,20,36,.48);
+    backdrop-filter: blur(10px);
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+}
+
+.room-detail-hero-metrics .icon { width: 14px; height: 14px; }
+
+.room-detail-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.room-detail-metric-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(145deg, rgba(11,35,60,.9), rgba(7,25,45,.96));
+    box-shadow: var(--shadow-soft);
+}
+
+.room-detail-metric-card > span {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+    place-items: center;
+    border-radius: 50%;
+    color: var(--color-primary-bright);
+    background: var(--color-surface-soft);
+}
+
+.room-detail-metric-card:nth-child(2) > span { color: var(--color-humidity); }
+.room-detail-metric-card:nth-child(3) > span { color: var(--color-success); }
+.room-detail-metric-card > span .icon { width: 19px; height: 19px; }
+.room-detail-metric-card div { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.room-detail-metric-card strong { color: var(--color-text); font-size: 17px; line-height: 1; }
+.room-detail-metric-card small { color: var(--color-text-subtle); font-size: 9px; }
+
+.room-detail-main-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(290px, .9fr); gap: 12px; align-items: start; }
+.room-detail-primary,
+.room-detail-sidebar { display: flex; min-width: 0; flex-direction: column; gap: 12px; }
+
+.room-devices-card .settings-card-header,
+.room-climate-card .settings-card-header { margin-bottom: 10px; }
+.room-device-list { display: flex; flex-direction: column; }
+
+.room-device-row {
+    display: grid;
+    grid-template-columns: 38px minmax(0, 1fr) minmax(70px, auto) auto 28px;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    min-height: 62px;
+    padding: 7px 0;
+    border-top: 1px solid rgba(101,157,213,.13);
+}
+
+.room-device-row:first-child { border-top: 1px solid var(--color-border); }
+.room-device-row.is-offline { opacity: .68; }
+.room-detail-device-icon { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid var(--color-border); border-radius: 50%; color: var(--color-primary-bright); background: var(--color-surface-soft); }
+.room-detail-device-icon .icon { width: 19px; height: 19px; }
+.room-detail-device-copy { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.room-detail-device-copy strong { overflow: hidden; color: var(--color-text); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.room-detail-device-copy span { color: var(--color-text-subtle); font-size: 9px; }
+.room-detail-device-value { color: var(--color-text-soft); font-size: 10px; white-space: nowrap; }
+.room-detail-device-control { display: flex; justify-content: flex-end; min-width: 80px; }
+.room-detail-device-control .device-toggle[aria-checked="true"] { background: var(--color-primary); }
+.room-detail-device-control .device-toggle[aria-checked="true"] span { transform: translateX(15px); }
+.room-detail-device-control .device-slider { width: 110px; }
+.room-device-open { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; color: var(--color-text-muted); background: rgba(7,25,44,.55); }
+.room-device-open:hover { color: var(--color-text); background: var(--color-surface-hover); }
+.room-device-open .icon { width: 14px; height: 14px; }
+.room-device-status { color: var(--color-text-muted); font-size: 9px; }
+
+.room-detail-sidebar .settings-card { width: 100%; }
+.room-detail-activity-card .activity-list { max-height: 310px; overflow: auto; scrollbar-width: none; }
+.room-detail-activity-card .activity-list::-webkit-scrollbar { display: none; }
+
+.room-climate-chart-wrap { margin-top: 2px; }
+.room-climate-svg { width: 100%; height: auto; min-height: 200px; }
+.room-temperature-line { fill: none; stroke: var(--color-primary-bright); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.room-humidity-line { fill: none; stroke: var(--color-humidity); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.room-temperature-point { fill: var(--color-primary-bright); stroke: var(--color-text-on-accent); stroke-width: 2; }
+.room-humidity-point { fill: var(--color-humidity); stroke: var(--color-text-on-accent); stroke-width: 2; }
+.room-humidity-key { background: var(--color-humidity) !important; }
+
+@media (max-width: 1050px) {
+    .room-detail-main-grid { grid-template-columns: 1fr; }
+    .room-detail-sidebar { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+}
+
+@media (max-width: 760px) {
+    .room-detail-hero { min-height: 285px; }
+    .room-detail-hero-content { left: 13px; bottom: 66px; }
+    .room-detail-hero-metrics { left: 13px; right: auto; bottom: 14px; }
+    .room-detail-metrics { grid-template-columns: 1fr 1fr; }
+    .room-device-row { grid-template-columns: 36px minmax(0, 1fr) auto 28px; }
+    .room-detail-device-value { display: none; }
+    .room-detail-device-control { min-width: 0; }
+    .room-detail-sidebar { display: flex; }
+}
