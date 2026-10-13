@@ -1,12 +1,12 @@
 Protel Design System Design Rule Check
-PCB File : E:\Workspace\PCB\SmartTempSensor\SmartTempSensor.PcbDoc
-Date     : 10/12/2026
-Time     : 9:04:33 PM
-
-Processing Rule : Clearance Constraint (Gap=0.2mm) (InComponent('J1') OR InComponent('U1') OR InComponent('D4') OR InComponent('U3')),(All)
-Rule Violations :0
+PCB File : E:\Workspace\Projects\smart-home-iot\hardware\SmartTempSensor\SmartTempSensor.PcbDoc
+Date     : 10/13/2026
+Time     : 9:39:33 PM
 
 Processing Rule : Clearance Constraint (Gap=0.25mm) (All),(All)
+Rule Violations :0
+
+Processing Rule : Clearance Constraint (Gap=0.2mm) (InComponent('J1') OR InComponent('U1') OR InComponent('D4') OR InComponent('U3')),(All)
 Rule Violations :0
 
 Processing Rule : Clearance Constraint (Gap=0.4mm) (InPolygon),(All)
@@ -57,10 +57,46 @@ Rule Violations :0
 Processing Rule : Board Clearance Constraint (Gap=0mm) (All)
 Rule Violations :0
 
+Processing Rule : Matched Lengths(Tolerance=0.5mm) (All)
+   Violation between Matched Net Lengths: Differential Pair USBD Actual Length Difference against diff pair USBF is: 38.63mm, Length Tolerance : 0.5mm.
+   Violation between Matched Net Lengths: Differential Pair USBF Actual Length Difference against diff pair USBD is: 38.63mm, Length Tolerance : 0.5mm.
+   Violation between Matched Net Lengths: Differential Pair USBP Actual Length Difference against diff pair USBD is: 41.025mm, Length Tolerance : 0.5mm.
+   Violation between Matched Net Lengths: Between Net +3.3V And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net BLUE_LED And Net USBD_N Length:8.44mm is not within 0.5mm tolerance of Length:41.16mm (32.22mm short) 
+   Violation between Matched Net Lengths: Between Net BOOT And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net CONFIG And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net GND And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net GREEN_LED And Net USBD_N Length:12.21mm is not within 0.5mm tolerance of Length:41.16mm (28.45mm short) 
+   Violation between Matched Net Lengths: Between Net NetC7_1 And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net NetD1_1 And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net NetD2_2 And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net NetD3_2 And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net NetD5_2 And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net NetJ1_A5 And Net USBD_N Length:3.25mm is not within 0.5mm tolerance of Length:41.16mm (37.41mm short) 
+   Violation between Matched Net Lengths: Between Net NetJ1_B5 And Net USBD_N Length:3.25mm is not within 0.5mm tolerance of Length:41.16mm (37.41mm short) 
+   Violation between Matched Net Lengths: Between Net NetJ2_5 And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net NetL1_1 And Net USBD_N Length:2.875mm is not within 0.5mm tolerance of Length:41.16mm (37.785mm short) 
+   Violation between Matched Net Lengths: Between Net NetL1_2 And Net USBD_N Length:2.775mm is not within 0.5mm tolerance of Length:41.16mm (37.885mm short) 
+   Violation between Matched Net Lengths: Between Net NetR1_1 And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net RED_LED And Net USBD_N Length:15.98mm is not within 0.5mm tolerance of Length:41.16mm (24.68mm short) 
+   Violation between Matched Net Lengths: Between Net RED_LED And Net USBD_P Length:15.98mm is not within 0.5mm tolerance of Length:40.89mm (24.41mm short) 
+   Violation between Matched Net Lengths: Between Net SHT_SCL And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net SHT_SDA And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net STAT And Net USBD_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net USBD_N And Net USBF_N Length:2.395mm is not within 0.5mm tolerance of Length:41.16mm (38.265mm short) 
+   Violation between Matched Net Lengths: Between Net USBD_N And Net USBF_P Length:2.395mm is not within 0.5mm tolerance of Length:41.16mm (38.265mm short) 
+   Violation between Matched Net Lengths: Between Net USBD_N And Net USBP_N Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net USBD_N And Net USBP_P Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net USBD_N And Net VBAT_SW Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net USBD_N And Net VBATT Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net USBD_N And Net VBATT_SENSE Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+   Violation between Matched Net Lengths: Between Net USBD_N And Net VBUS Length:0mm is not within 0.5mm tolerance of Length:41.16mm (40.66mm short) 
+Rule Violations :33
+
 Processing Rule : Height Constraint (Min=0mm) (Max=25.4mm) (Prefered=12.7mm) (All)
 Rule Violations :0
 
 
-Violations Detected : 0
+Violations Detected : 33
 Waived Violations : 0
 Time Elapsed        : 00:00:00
