@@ -1,0 +1,70 @@
+Added Component: Designator=J1(JAE_DX07S016JA1R1500)
+Add component (AddParameter): Name = "Check_prices"; Value = "https://www.snapeda.com/parts/DX07S016JA1R1500/JAE+Electronics/view-part/?ref=eda"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "MF"; Value = "JAE Electronics"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "MP"; Value = "DX07S016JA1R1500"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Package"; Value = "None"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "SnapEDA_Link"; Value = "https://www.snapeda.com/parts/DX07S016JA1R1500/JAE+Electronics/view-part/?ref=snap"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Value"; Value = ""; VariantName = "[No Variations]"
+Added Component: Designator=J2(SOT95P280X145-5N)
+Add component (AddParameter): Name = "Availability"; Value = "In Stock"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Check_prices"; Value = "https://www.snapeda.com/parts/MCP73831T-2ACI/OT/Microchip/view-part/?ref=eda"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "MF"; Value = "Microchip"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "MP"; Value = "MCP73831T-2ACI/OT"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Package"; Value = "SOT-23 Microchip"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Price"; Value = "None"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Purchase-URL"; Value = "https://pricing.snapeda.com/search/part/MCP73831T-2ACI/OT/?ref=eda"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "SnapEDA_Link"; Value = "https://www.snapeda.com/parts/MCP73831T-2ACI/OT/Microchip/view-part/?ref=snap"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Value"; Value = ""; VariantName = "[No Variations]"
+Added Component: Designator=U2(XCVR_ESP32-C6-WROOM-1-N8)
+Add component (AddParameter): Name = "Check_prices"; Value = "https://www.snapeda.com/parts/ESP32-C6-WROOM-1-N8/Espressif+Systems/view-part/?ref=eda"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "MF"; Value = "Espressif Systems"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "MP"; Value = "ESP32-C6-WROOM-1-N8"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Package"; Value = "SMD-28 Espressif Systems"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "SnapEDA_Link"; Value = "https://www.snapeda.com/parts/ESP32-C6-WROOM-1-N8/Espressif+Systems/view-part/?ref=snap"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Value"; Value = ""; VariantName = "[No Variations]"
+Added Pin To Net: NetName=GND Pin=J1-A1/B12
+Added Pin To Net: NetName=VBUS Pin=J1-A4/B9
+Added Pin To Net: NetName=NetJ1_A5 Pin=J1-A5
+Added Pin To Net: NetName=USBP_P Pin=J1-A6
+Added Pin To Net: NetName=USBP_N Pin=J1-A7
+Added Pin To Net: NetName=GND Pin=J1-A12/B1
+Added Pin To Net: NetName=VBUS Pin=J1-B4/A9
+Added Pin To Net: NetName=NetJ1_B5 Pin=J1-B5
+Added Pin To Net: NetName=USBP_P Pin=J1-B6
+Added Pin To Net: NetName=USBP_N Pin=J1-B7
+Added Pin To Net: NetName=GND Pin=J1-SH1
+Added Pin To Net: NetName=GND Pin=J1-SH2
+Added Pin To Net: NetName=GND Pin=J1-SH3
+Added Pin To Net: NetName=GND Pin=J1-SH4
+Added Pin To Net: NetName=GND Pin=J1-SH5
+Added Pin To Net: NetName=GND Pin=J1-SH6
+Added Pin To Net: NetName=STAT Pin=J2-1
+Added Pin To Net: NetName=GND Pin=J2-2
+Added Pin To Net: NetName=VBATT Pin=J2-3
+Added Pin To Net: NetName=VBUS Pin=J2-4
+Added Pin To Net: NetName=NetJ2_5 Pin=J2-5
+Added Pin To Net: NetName=GND Pin=U2-1
+Added Pin To Net: NetName=+3.3V Pin=U2-2
+Added Pin To Net: NetName=NetC7_1 Pin=U2-3
+Added Pin To Net: NetName=REED_SENSE Pin=U2-6
+Added Pin To Net: NetName=VBATT_SENSE Pin=U2-8
+Added Pin To Net: NetName=USBD_N Pin=U2-13
+Added Pin To Net: NetName=USBD_P Pin=U2-14
+Added Pin To Net: NetName=BOOT Pin=U2-15
+Added Pin To Net: NetName=RED_LED Pin=U2-16
+Added Pin To Net: NetName=GREEN_LED Pin=U2-17
+Added Pin To Net: NetName=BLUE_LED Pin=U2-18
+Added Pin To Net: NetName=CONFIG Pin=U2-26
+Added Pin To Net: NetName=GND Pin=U2-28
+Added Pin To Net: NetName=GND Pin=U2-29_1
+Added Pin To Net: NetName=GND Pin=U2-29_2
+Added Pin To Net: NetName=GND Pin=U2-29_3
+Added Pin To Net: NetName=GND Pin=U2-29_4
+Added Pin To Net: NetName=GND Pin=U2-29_5
+Added Pin To Net: NetName=GND Pin=U2-29_6
+Added Pin To Net: NetName=GND Pin=U2-29_7
+Added Pin To Net: NetName=GND Pin=U2-29_8
+Added Pin To Net: NetName=GND Pin=U2-29_9
+Added Member To Class: ClassName=Power Member=Component J1 DX07S016JA1R1500
+Added Member To Class: ClassName=Power Member=Component J2 MCP73831T-2ACI/OT
+Added Member To Class: ClassName=MCU Member=Component U2 ESP32-C6-WROOM-1-N8
