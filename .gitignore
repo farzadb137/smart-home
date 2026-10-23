@@ -38,3 +38,12 @@ env/
 Thumbs.db
 *.swp
 *~
+
+# ==========================================
+# Hub Secrets & Cryptographic Keys
+# ==========================================
+**/*.key
+**/*.csr
+**/*.srl
+**/secrets.env
+**/flask_secret_key
