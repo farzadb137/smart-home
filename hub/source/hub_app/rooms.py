@@ -19,7 +19,7 @@ def _serialize_room(row):
     return {
         "id": row["id"],
         "name": row["name"],
-        "icon": row["icon"],
+        "type": row["type"],
         "sort_order": row["sort_order"],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
@@ -53,13 +53,13 @@ def get_rooms():
 def create_room_endpoint():
     payload = request.get_json(silent=True) or {}
     name = (payload.get("name") or "").strip()
-    icon = (payload.get("icon") or "room").strip() or "room"
+    type = (payload.get("type") or "room").strip() or "room"
     if not name:
         return jsonify({"success": False, "error": "Room name cannot be empty"}), 400
     if len(name) > 64:
         return jsonify({"success": False, "error": "Room name must be 64 characters or fewer"}), 400
     try:
-        room_id = create_room(name, icon)
+        room_id = create_room(name, type)
     except Exception as exc:
         if "UNIQUE" in str(exc).upper():
             return jsonify({"success": False, "error": "A room with that name already exists"}), 409
@@ -73,7 +73,7 @@ def create_room_endpoint():
 def update_room_endpoint(room_id):
     payload = request.get_json(silent=True) or {}
     name = payload.get("name")
-    icon = payload.get("icon")
+    type = payload.get("type")
     sort_order = payload.get("sort_order")
     if name is not None:
         name = name.strip()
@@ -84,7 +84,7 @@ def update_room_endpoint(room_id):
     if sort_order is not None and not isinstance(sort_order, int):
         return jsonify({"success": False, "error": "sort_order must be an integer"}), 400
     try:
-        updated = update_room(room_id, name=name, icon=icon, sort_order=sort_order)
+        updated = update_room(room_id, name=name, type=type, sort_order=sort_order)
     except Exception as exc:
         if "UNIQUE" in str(exc).upper():
             return jsonify({"success": False, "error": "A room with that name already exists"}), 409

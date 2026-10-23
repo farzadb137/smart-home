@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 def list_rooms():
     connection = get_connection()
     rows = connection.execute(
-        "SELECT id, name, icon, sort_order, created_at, updated_at FROM rooms ORDER BY sort_order, name COLLATE NOCASE"
+        "SELECT id, name, type, sort_order, created_at, updated_at FROM rooms ORDER BY sort_order, name COLLATE NOCASE"
     ).fetchall()
     connection.close()
     return rows
@@ -14,21 +14,22 @@ def list_rooms():
 def get_room(room_id):
     connection = get_connection()
     row = connection.execute(
-        "SELECT id, name, icon, sort_order, created_at, updated_at FROM rooms WHERE id=?",
+        "SELECT id, name, type, sort_order, created_at, updated_at FROM rooms WHERE id=?",
         (room_id,)
     ).fetchone()
     connection.close()
     return row
 
 
-def create_room(name, icon="room", sort_order=None):
+def create_room(name, type="room", sort_order=None):
     connection = get_connection()
     if sort_order is None:
         row = connection.execute("SELECT COALESCE(MAX(sort_order), -1) + 1 AS next_order FROM rooms").fetchone()
         sort_order = row["next_order"]
+    now = datetime.now(timezone.utc).isoformat()
     cursor = connection.execute(
-        "INSERT INTO rooms (name, icon, sort_order, created_at, updated_at) VALUES (?,?,?,?,datetime('now'))",
-        (name, icon or "room", sort_order, datetime.now(timezone.utc).isoformat())
+        "INSERT INTO rooms (name, type, sort_order, created_at, updated_at) VALUES (?,?,?,?,?)",
+        (name, type or "room", sort_order, now, now)
     )
     connection.commit()
     room_id = cursor.lastrowid
@@ -36,18 +37,19 @@ def create_room(name, icon="room", sort_order=None):
     return room_id
 
 
-def update_room(room_id, name=None, icon=None, sort_order=None):
+def update_room(room_id, name=None, type=None, sort_order=None):
     connection = get_connection()
-    current = connection.execute("SELECT id, name, icon, sort_order FROM rooms WHERE id=?", (room_id,)).fetchone()
+    current = connection.execute("SELECT id, name, type, sort_order FROM rooms WHERE id=?", (room_id,)).fetchone()
     if current is None:
         connection.close()
         return False
     connection.execute(
-        "UPDATE rooms SET name=?, icon=?, sort_order=?, updated_at=datetime('now') WHERE id=?",
+        "UPDATE rooms SET name=?, type=?, sort_order=?, updated_at=? WHERE id=?",
         (
             current["name"] if name is None else name,
-            current["icon"] if icon is None else icon,
+            current["type"] if type is None else type,
             current["sort_order"] if sort_order is None else sort_order,
+            datetime.now(timezone.utc).isoformat(),
             room_id,
         )
     )
