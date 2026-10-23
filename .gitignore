@@ -1,8 +1,10 @@
-# Altium Designer
+# ==========================================
+# Altium Designer Artifacts & Backups
+# ==========================================
 **/History/
 **/__Previews/
-**/Project\ Logs*/
-**/Project\ Outputs*/
+**/Project Logs for */
+**/Project Outputs for */
 *.SchDocPreview
 *.PcbDocPreview
 *.LOG
@@ -10,21 +12,29 @@
 *.drc
 *.Dat
 *.PcbLib.ref*
+*.~*
 
-# Secrets and Sensitive Certificates
-**/*.key
-**/*.csr
-**/*.srl
-**/secrets.env
-**/flask_secret_key
-
-# ESP-IDF & Build Artifacts
+# ==========================================
+# Embedded & ESP-IDF Build Artifacts
+# ==========================================
 **/build/
 **/sdkconfig.old
-firmware/**/managed_components/
-firmware/**/dependencies.lock
+**/managed_components/
 
-# Python & Web
+# ==========================================
+# Python & Web Services
+# ==========================================
 **/__pycache__/
 *.py[cod]
+*$py.class
 .venv/
+env/
+*.sqlite3
+
+# ==========================================
+# Operating System & IDE Clutter
+# ==========================================
+.DS_Store
+Thumbs.db
+*.swp
+*~

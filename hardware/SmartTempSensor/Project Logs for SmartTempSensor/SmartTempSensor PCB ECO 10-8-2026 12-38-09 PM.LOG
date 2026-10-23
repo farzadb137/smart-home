@@ -1,9 +1,0 @@
-Change Physical Footprint: Designator=C4 Old Footprint=FP-GCM21B-0_15-IPC_A New Footprint=FP-GCM21B-0_15-IPC_A
-Change Physical Footprint: Designator=C5 Old Footprint=FP-VJ0603Y105KXJCW1BC-MFG New Footprint=FP-VJ0603Y105KXJCW1BC-MFG
-Change Physical Footprint: Designator=J1 Old Footprint=JAE_DX07S016JA1R1500 New Footprint=JAE_DX07S016JA1R1500
-Change Physical Footprint: Designator=P2 Old Footprint=61300211121 New Footprint=61300211121
-Change Physical Footprint: Designator=R11 Old Footprint=FP-AC0603-IPC_A New Footprint=FP-AC0603-IPC_A
-Change Physical Footprint: Designator=SW1 Old Footprint=FP-1101M2S3CQE2-MFG New Footprint=FP-1101M2S3CQE2-MFG
-Change Physical Footprint: Designator=SW2 Old Footprint=430156130736 New Footprint=430156130736
-Change Physical Footprint: Designator=U1 Old Footprint=FP-DLA0010A-MFG New Footprint=FP-DLA0010A-MFG
-Change Physical Footprint: Designator=U2 Old Footprint=XCVR_ESP32-C6-WROOM-1-N8 New Footprint=XCVR_ESP32-C6-WROOM-1-N8
