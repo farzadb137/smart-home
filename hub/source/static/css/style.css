@@ -1,4 +1,45 @@
-@import url("./tokens.css");
-@import url("./base.css");
-@import url("./layout.css");
-@import url("./components.css");
+/* Smart Home Dashboard — CSS entry point */
+/* Smart Home Dashboard - Global stylesheet entry point */
+
+@import url('./core/fonts.css');
+@import url('./core/theme.css');
+@import url('./core/layout.css');
+@import url('./components/rooms.css');
+@import url('./components/room-detail.css');
+@import url('./components/dashboard.css');
+@import url('./components/settings.css');
+@import url('./components/devices.css');
+@import url('./components/empty-state.css');
+@import url('./components/activity.css');
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+html {
+    font-family: var(--font-family);
+    color-scheme: var(--color-scheme);
+    background: var(--color-bg);
+}
+
+body {
+    min-width: var(--page-min-width);
+    overflow: hidden;
+    color: var(--color-text);
+    background: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+a,
+button,
+input {
+    -webkit-tap-highlight-color: transparent;
+}

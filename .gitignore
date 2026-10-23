@@ -1,0 +1,30 @@
+# Altium Designer
+**/History/
+**/__Previews/
+**/Project\ Logs*/
+**/Project\ Outputs*/
+*.SchDocPreview
+*.PcbDocPreview
+*.LOG
+*.Zip
+*.drc
+*.Dat
+*.PcbLib.ref*
+
+# Secrets and Sensitive Certificates
+**/*.key
+**/*.csr
+**/*.srl
+**/secrets.env
+**/flask_secret_key
+
+# ESP-IDF & Build Artifacts
+**/build/
+**/sdkconfig.old
+firmware/**/managed_components/
+firmware/**/dependencies.lock
+
+# Python & Web
+**/__pycache__/
+*.py[cod]
+.venv/

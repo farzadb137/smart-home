@@ -1,226 +1,174 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Home</title>
-    <link rel="stylesheet" href="css/fonts.css">
+    <title>Smart Home Dashboard</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/style.css">
-    <script src="js/vendor/chart.umd.min.js"></script>
 </head>
 <body>
-    <div class="app">
-        <aside class="sidebar">
-            <div class="brand">
-                <span class="brand-icon" data-icon="home" aria-hidden="true"></span>
-                <span class="brand-name">My Home</span>
+    <div class="dashboard-layout">
+
+        <!-- Sidebar -->
+        <aside class="sidebar" aria-label="Main sidebar">
+
+            <!-- Brand / sidebar header -->
+            <div class="sidebar-header">
+                <a href="#" class="brand" aria-label="SmartHome home">
+                    <span class="brand-icon" data-icon="brand"></span>
+                    <span class="brand-content">
+                        <strong>SmartHome</strong>
+                        <small>Smarter Living</small>
+                    </span>
+                </a>
             </div>
 
-            <nav class="sidebar-nav" aria-label="Main navigation">
-                <p class="nav-title">HOME</p>
-                <ul>
-                    <li>
-                        <a href="#overview" class="nav-item active" data-route="overview">
-                            <span class="nav-icon" data-icon="home" aria-hidden="true"></span>
-                            <span>Home</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#rooms" class="nav-item" data-route="rooms">
-                            <span class="nav-icon" data-icon="rooms" aria-hidden="true"></span>
-                            <span>Rooms</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#devices" class="nav-item" data-route="devices">
-                            <span class="nav-icon" data-icon="devices" aria-hidden="true"></span>
-                            <span>Devices</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#automations" class="nav-item" data-route="automations">
-                            <span class="nav-icon" data-icon="automation" aria-hidden="true"></span>
-                            <span>Automations</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="#activity" class="nav-item" data-route="activity">
-                            <span class="nav-icon" data-icon="activity" aria-hidden="true"></span>
-                            <span>Activity</span>
-                        </a>
-                    </li>
-                </ul>
+            <!-- Home navigation -->
+            <nav class="sidebar-navigation" aria-label="Main navigation">
+                <div class="navigation-group">
+                    <span class="navigation-label">HOME</span>
 
-                <p class="nav-title">SYSTEM</p>
-                <ul>
-                    <li>
-                        <a href="#settings" class="nav-item" data-route="settings" id="admin-settings-link">
-                            <span class="nav-icon" data-icon="settings" aria-hidden="true"></span>
-                            <span>Settings</span>
-                        </a>
-                    </li>
-                </ul>
+                    <a href="#home" class="navigation-item is-active" aria-current="page" data-view="home">
+                        <span class="navigation-icon" data-icon="home"></span>
+                        <span>Home</span>
+                    </a>
+
+                    <a href="#rooms" class="navigation-item" data-view="rooms">
+                        <span class="navigation-icon" data-icon="rooms"></span>
+                        <span>Rooms</span>
+                    </a>
+
+                    <a href="#devices" class="navigation-item" data-view="devices">
+                        <span class="navigation-icon" data-icon="devices"></span>
+                        <span>Devices</span>
+                    </a>
+
+                    <a href="#" class="navigation-item" data-view="automations">
+                        <span class="navigation-icon" data-icon="automation"></span>
+                        <span>Automations</span>
+                    </a>
+
+                    <a href="#" class="navigation-item" data-view="energy">
+                        <span class="navigation-icon" data-icon="energy"></span>
+                        <span>Energy</span>
+                    </a>
+
+                    <a href="#" class="navigation-item" data-view="security">
+                        <span class="navigation-icon" data-icon="security"></span>
+                        <span>Security</span>
+                    </a>
+                </div>
+
+                <!-- System navigation -->
+                <div class="navigation-group">
+                    <span class="navigation-label">SYSTEM</span>
+
+                    <a href="#settings" class="navigation-item" data-view="settings">
+                        <span class="navigation-icon" data-icon="settings"></span>
+                        <span>Settings</span>
+                    </a>
+
+                    <a href="#activity" class="navigation-item" data-view="activity">
+                        <span class="navigation-icon" data-icon="logs"></span>
+                        <span>Activity</span>
+                    </a>
+
+                    <a href="#" class="navigation-item" data-view="notifications">
+                        <span class="navigation-icon" data-icon="notifications"></span>
+                        <span>Notifications</span>
+                    </a>
+                </div>
             </nav>
 
-            <div class="sidebar-status">
-                <span class="status-dot"></span>
-                <div>
-                    <strong>Home</strong>
-                    <small id="sidebar-status-text">Checking systems…</small>
+            <!-- User account -->
+            <div class="sidebar-account">
+                <div class="account-profile">
+                    <div class="account-avatar" aria-hidden="true"></div>
+
+                    <div class="account-details">
+                        <strong></strong>
+                        <span></span>
+                    </div>
                 </div>
-                <button id="logout-btn" class="sidebar-logout">Sign out</button>
+
+                <button type="button" class="logout-button">
+                    <span class="logout-icon" data-icon="logout"></span>
+                    <span>Logout</span>
+                </button>
             </div>
+
         </aside>
 
-        <main class="main-content">
-            <header class="topbar">
-                <div>
-                    <h2 class="greeting-text">Good Evening</h2>
-                    <p class="topbar-date"></p>
-                </div>
-                <div class="topbar-actions">
-                    <button id="global-search-button" class="topbar-search-button" type="button" aria-label="Open quick search">
-                        <span class="topbar-search-icon" data-icon="search" aria-hidden="true"></span>
-                        <span class="topbar-search-label">Search</span>
-                        <kbd>Ctrl K</kbd>
-                    </button>
-                    <div class="topbar-time"></div>
-                </div>
+        <!-- Main dashboard area -->
+        <main class="dashboard">
+            <header class="dashboard-header" aria-label="Dashboard overview">
+                <section class="header-weather" aria-label="Weather and local time">
+                    <div class="header-meta-row">
+                        <span class="header-icon" data-icon="calendar"></span>
+                        <div>
+                            <span class="header-meta-label"></span>
+                            <strong class="header-time"></strong>
+                        </div>
+                    </div>
+                    <div class="weather-summary">
+                        <span class="weather-icon" id="weather-icon"></span>
+                        <div>
+                            <strong id="weather-temp">--°C</strong>
+                            <span id="weather-desc">Loading...</span>
+                        </div>
+                    </div>
+                    <label class="weather-location">
+                        <span data-icon="location"></span>
+                        <input id="city-input" type="text" placeholder="Search city...">
+                    </label>
+                </section>
+
+                <section class="header-welcome" aria-label="Welcome and search">
+                    <span class="header-eyebrow">HOME OVERVIEW</span>
+                    <h1>Good Day</h1>
+                    <p>Your smart home is running smoothly. Here is what is happening around your home right now.</p>
+                    <label class="dashboard-search">
+                        <span class="search-icon" data-icon="search"></span>
+                        <input type="search" placeholder="Search devices, rooms, automations..." aria-label="Search dashboard">
+                        <kbd>Ctrl</kbd><kbd>K</kbd>
+                    </label>
+                </section>
+
+                <section class="header-overview" aria-label="System overview">
+                    <div class="health-status">
+                        <span class="health-icon" id="status-icon" data-icon="check-circle"></span>
+                        <div>
+                            <span class="overview-label">SYSTEM STATUS</span>
+                            <strong id="status-text">Checking...</strong>
+                        </div>
+                        <button class="notification-button" type="button" aria-label="View notifications">
+                            <span data-icon="notifications"></span>
+                            <span class="notification-badge">3</span>
+                        </button>
+                    </div>
+                    <div class="overview-stats">
+                        <div class="overview-stat">
+                            <span class="stat-value" id="total-devices"></span>
+                            <span class="stat-label">Total devices</span>
+                        </div>
+                        <div class="overview-stat">
+                            <span class="stat-value" id="total-rooms"></span>
+                            <span class="stat-label">Rooms</span>
+                        </div>
+                        <div class="overview-stat is-attention">
+                            <span class="stat-value" id="offline-devices"></span>
+                            <span class="stat-label">Need attention</span>
+                        </div>
+                    </div>
+                </section>
             </header>
 
-            <section class="view" data-view="overview">
-                <div class="dashboard-grid">
-                    <section class="card home-status-card home-hero" data-state="normal" aria-labelledby="home-status-title">
-                        <div class="home-hero-main">
-                            <div class="home-hero-icon" data-home-hero-icon aria-hidden="true"></div>
-                            <div>
-                                <p class="card-label home-status-label">YOUR SMART HOME</p>
-                                <h1 class="home-status-title" id="home-hero-greeting">Good evening</h1>
-                                <p class="home-status-summary" id="home-status-summary">Everything is being checked. Your home status will appear here.</p>
-                                <p class="home-hero-date" id="home-hero-date"></p>
-                            </div>
-                        </div>
-                        <div class="home-overview-metrics" aria-label="Home summary">
-                            <div class="home-metric"><strong id="home-device-count">0</strong><span>Devices</span></div>
-                            <div class="home-metric"><strong id="home-online-count">0</strong><span>Online</span></div>
-                            <div class="home-metric"><strong id="home-hero-rooms">0</strong><span>Rooms</span></div>
-                            <div class="home-metric home-metric-attention"><strong id="home-hero-attention">0</strong><span>Attention</span></div>
-                        </div>
-                        <div class="home-status-footer">
-                            <span class="status-dot"></span>
-                            <span id="home-status-detail">Checking systems…</span>
-                            <span class="home-hero-footer-spacer"></span>
-                            <span class="home-hero-automation"><strong id="home-hero-automations">0</strong> active automations</span>
-                            <a href="#activity" data-route="activity">View activity →</a>
-                        </div>
-                    </section>
-
-                    <section class="card climate-card">
-                        <div class="card-header">
-                            <div class="climate-card-heading">
-                                <span class="climate-card-icon"></span>
-                                <div>
-                                    <p class="card-label">CLIMATE</p>
-                                    <h2 class="climate-room">Loading…</h2>
-                                </div>
-                            </div>
-                            <span class="status-badge">
-                                <span class="status-dot"></span>
-                                <span class="status-text">Online</span>
-                            </span>
-                        </div>
-                        <div class="climate-body">
-                            <div class="temperature">
-                                <span class="temperature-value">--</span>
-                                <span class="temperature-unit">°C</span>
-                            </div>
-                            <div class="climate-gauge"></div>
-                        </div>
-                        <div class="climate-details">
-                            <div class="detail">
-                                <span class="detail-label">Temperature</span>
-                                <span class="detail-value temperature-detail">-- °C</span>
-                            </div>
-                            <div class="detail">
-                                <span class="detail-label">Last updated</span>
-                                <span class="detail-value last-updated-value">--</span>
-                            </div>
-                        </div>
-                        <div class="climate-history">
-                            <div class="history-range-buttons">
-                                <button class="range-btn active" data-range="24h">24h</button>
-                                <button class="range-btn" data-range="7d">7d</button>
-                                <button class="range-btn" data-range="30d">30d</button>
-                            </div>
-                            <div class="history-chart-wrap">
-                                <canvas class="climate-history-canvas"></canvas>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="card rooms-card" id="rooms-section">
-                        <div class="section-heading">
-                            <div>
-                                <p class="card-label">YOUR HOME</p>
-                                <h2>Rooms</h2>
-                                <p>Group devices by the spaces where they belong.</p>
-                            </div>
-                            <a href="#rooms" class="section-link" data-route="rooms">Open rooms</a>
-                        </div>
-                        <div class="rooms-preview-content">
-                            <div class="empty-state room-empty-state">
-                                <span class="empty-state-icon" data-icon="room" aria-hidden="true"></span>
-                                <div>
-                                    <strong>No rooms configured yet</strong>
-                                    <p>Rooms are the main way to navigate your home. Open a room to control its devices and see live conditions.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="card quick-controls-card">
-                        <div class="section-heading">
-                            <div>
-                                <p class="card-label">QUICK CONTROLS</p>
-                                <h2>Quick controls</h2>
-                                <p>Favorite switches and frequently used devices.</p>
-                            </div>
-                            <a href="#devices" class="section-link" data-route="devices">All devices</a>
-                        </div>
-                        <div class="quick-controls-list"></div>
-                    </section>
-
-                    <section class="card home-insights-card">
-                        <div class="section-heading">
-                            <div>
-                                <p class="card-label">HOME OVERVIEW</p>
-                                <h2>At a glance</h2>
-                                <p>See what needs attention and what your home has been doing.</p>
-                            </div>
-                        </div>
-                        <div class="home-insights-content"></div>
-                    </section>
-
-                </div>
-            </section>
-
-            <section class="view" data-view="rooms" style="display:none;">
-                <div id="rooms-page"></div>
-            </section>
-            <section class="view" data-view="devices" style="display:none;">
-                <div id="devices-page"></div>
-            </section>
-            <section class="view" data-view="automations" style="display:none;">
-                <div id="automations-page"></div>
-            </section>
-            <section class="view" data-view="activity" style="display:none;">
-                <div id="activity-page"></div>
-            </section>
-            <section class="view" data-view="settings" style="display:none;">
-                <div id="settings-page"></div>
-            </section>
+            <section id="app" class="dashboard-content"></section>
         </main>
+
     </div>
+
     <script type="module" src="js/app.js"></script>
 </body>
 </html>

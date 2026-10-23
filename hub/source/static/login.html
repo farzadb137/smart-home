@@ -1,60 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Sign in - Smart Home</title>
-	<link rel="stylesheet" href="css/fonts.css">
-	<link rel="stylesheet" href="css/style.css">
-	<style>
-		.login-wrap { display:flex; align-items:center; justify-content:center; min-height:100vh; }
-		.login-card { width:320px; }
-		.login-card input { width:100%; padding:10px; margin:8px 0; box-sizing:border-box;
-			border:1px solid var(--color-border); border-radius:8px; background:var(--color-surface-light); color:var(--color-text); }
-		.login-card button { width:100%; padding:10px; margin-top:8px; border:none; border-radius:8px;
-			background:var(--color-primary); color:#1a1310; font-weight:600; cursor:pointer; }
-		.login-error { color:var(--color-danger); font-size:13px; min-height:18px; margin-top:6px; }
-	</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign in · SmartHome</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/components/auth.css">
 </head>
-<body>
-	<div class="login-wrap">
-		<div class="card login-card">
-			<h2>Sign in</h2>
-			<input type="text" id="username" placeholder="Username" autocomplete="username">
-			<input type="password" id="password" placeholder="Password" autocomplete="current-password">
-			<button id="submit">Sign in</button>
-			<div class="login-error" id="error"></div>
-		</div>
-	</div>
-	<script>
-		const errorEl = document.getElementById("error");
+<body class="auth-page">
+    <main class="auth-shell">
+        <section class="auth-card" aria-labelledby="login-title">
+            <div class="auth-brand">
+                <span class="auth-brand-icon" data-icon="brand"></span>
+                <span>SmartHome</span>
+            </div>
 
-		async function attemptLogin() {
-			errorEl.textContent = "";
-			const username = document.getElementById("username").value;
-			const password = document.getElementById("password").value;
+            <h1 class="auth-heading" id="login-title">Welcome back</h1>
+            <p class="auth-subheading">Sign in to your smart home account</p>
 
-			try {
-				const response = await fetch("/api/login", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ username, password })
-				});
-				if (response.ok) {
-					window.location.href = "/";
-					return;
-				}
-				const data = await response.json().catch(() => ({}));
-				errorEl.textContent = data.error || "Sign in failed";
-			} catch (error) {
-				errorEl.textContent = "Could not reach the server";
-			}
-		}
+            <form class="auth-form" id="login-form" novalidate>
+                <div class="auth-field">
+                    <label for="login-email">Username/Email address</label>
+                    <div class="auth-input-wrap">
+                        <span class="auth-input-icon" data-icon="mail"></span>
+                        <input id="login-email" name="email" type="email" autocomplete="email" placeholder="Enter your username or email address" required>
+                    </div>
+                </div>
 
-		document.getElementById("submit").addEventListener("click", attemptLogin);
-		document.getElementById("password").addEventListener("keydown", (event) => {
-			if (event.key === "Enter") attemptLogin();
-		});
-	</script>
+                <div class="auth-field">
+                    <div class="auth-row">
+                        <label for="login-password">Password</label>
+                        <button type="button" class="auth-link" id="forgot-password">Forgot password?</button>
+                    </div>
+                    <div class="auth-input-wrap">
+                        <span class="auth-input-icon" data-icon="lock"></span>
+                        <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+                        <button type="button" class="auth-password-toggle" data-password-toggle="login-password" aria-label="Show password">
+                            <span data-icon="eye"></span>
+                        </button>
+                    </div>
+                </div>
+
+                <label class="auth-check">
+                    <input type="checkbox" name="remember">
+                    <span>Keep me signed in</span>
+                </label>
+
+                <div class="auth-message" id="login-message" role="alert"></div>
+
+                <button class="auth-submit" type="submit" id="login-submit">
+                    <span data-icon="user"></span>
+                    <span>Sign in</span>
+                </button>
+            </form>
+
+            <div class="auth-divider"><span>or</span></div>
+
+            <a class="auth-secondary" href="admin-login.html">
+                <span data-icon="shield"></span>
+                <span>First-time administrator setup</span>
+            </a>
+
+            <div class="auth-security">
+                <span data-icon="shield"></span>
+                <span>Secure · Private · Your Home</span>
+            </div>
+
+            <p class="auth-footer">SmartHome Dashboard</p>
+        </section>
+    </main>
+
+    <script type="module" src="js/auth-login.js"></script>
 </body>
 </html>
