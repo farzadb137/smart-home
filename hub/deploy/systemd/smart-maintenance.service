@@ -1,0 +1,14 @@
+[Unit]
+Description=Smart Hub - DB maintenance (rollup, prune, vacuum)
+After=smart-collector.service
+
+[Service]
+Type=oneshot
+User=farzad
+Group=farzad
+EnvironmentFile=/etc/smart-hub/secrets.env
+WorkingDirectory=/home/farzad/smart-hub/hub/backend/src/hub
+ExecStart=/home/farzad/smart-hub/.venv/bin/python3 /home/farzad/smart-hub/hub/backend/src/hub/hub_maintenance.py
+
+NoNewPrivileges=yes
+PrivateTmp=yes

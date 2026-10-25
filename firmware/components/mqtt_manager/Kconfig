@@ -1,0 +1,5 @@
+menu "mqtt_manager"
+    config MQTT_MANAGER_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

@@ -1,0 +1,5 @@
+menu "ds18b20"
+    config DS18B20_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

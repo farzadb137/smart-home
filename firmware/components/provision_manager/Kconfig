@@ -1,0 +1,5 @@
+menu "provision_manager"
+    config PROVISION_MANAGER_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

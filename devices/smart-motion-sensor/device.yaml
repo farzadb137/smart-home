@@ -1,0 +1,17 @@
+name: Smart Motion Sensor
+id: smart-motion-sensor
+version: 0.1.0
+status: concept          # concept | prototype | pilot | production | retired
+
+boards:
+  - id: smart-motion-sensor
+    rev: A
+
+firmware:
+  app: null            # not started
+  target: esp32c6
+
+connectivity: [wifi]
+
+mechanical:
+  enclosure: null

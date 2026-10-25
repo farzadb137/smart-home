@@ -1,0 +1,32 @@
+version: 1
+prefix: home
+
+# Derived from hub/config/mosquitto/acl and hub/backend/src/hub/config.py
+topics:
+  telemetry:
+    pattern: "home/devices/{device_id}/telemetry"
+    direction: device -> hub
+  status:
+    pattern: "home/devices/{device_id}/status"
+    direction: device -> hub
+  response:
+    pattern: "home/devices/{device_id}/response"
+    direction: device -> hub
+  command:
+    pattern: "home/devices/{device_id}/command"
+    direction: hub -> device
+  child_telemetry:
+    pattern: "home/devices/{device_id}/children/{child_id}/telemetry"
+    direction: device -> hub
+  child_status:
+    pattern: "home/devices/{device_id}/children/{child_id}/status"
+    direction: device -> hub
+  child_command:
+    pattern: "home/devices/{device_id}/children/{child_id}/command"
+    direction: hub -> device
+  child_response:
+    pattern: "home/devices/{device_id}/children/{child_id}/response"
+    direction: device -> hub
+  time:
+    pattern: "home/time"
+    direction: hub -> all devices

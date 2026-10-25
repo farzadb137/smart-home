@@ -1,0 +1,5 @@
+menu "command_manager"
+    config COMMAND_MANAGER_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

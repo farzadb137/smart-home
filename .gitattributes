@@ -1,0 +1,26 @@
+# Altium binaries -> Git LFS
+*.SchDoc   filter=lfs diff=lfs merge=lfs -text
+*.PcbDoc   filter=lfs diff=lfs merge=lfs -text
+*.SchLib   filter=lfs diff=lfs merge=lfs -text
+*.PcbLib   filter=lfs diff=lfs merge=lfs -text
+*.IntLib   filter=lfs diff=lfs merge=lfs -text
+*.PrjMbd   filter=lfs diff=lfs merge=lfs -text
+*.MbsDoc   filter=lfs diff=lfs merge=lfs -text
+*.OutJob   filter=lfs diff=lfs merge=lfs -text
+
+# Mechanical / documents / media
+*.step     filter=lfs diff=lfs merge=lfs -text
+*.stp      filter=lfs diff=lfs merge=lfs -text
+*.stl      filter=lfs diff=lfs merge=lfs -text
+*.pdf      filter=lfs diff=lfs merge=lfs -text
+*.png      filter=lfs diff=lfs merge=lfs -text
+*.jpg      filter=lfs diff=lfs merge=lfs -text
+*.zip      filter=lfs diff=lfs merge=lfs -text
+
+# Text files
+*.PrjPcb   text eol=crlf
+*.sh       text eol=lf
+*.py       text eol=lf
+
+# Hub dashboard images are served straight from the working tree on the hub: keep them out of LFS
+hub/dashboard/**/*.jpg -filter -diff -merge

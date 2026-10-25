@@ -1,0 +1,5 @@
+menu "app_manager"
+    config APP_MANAGER_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

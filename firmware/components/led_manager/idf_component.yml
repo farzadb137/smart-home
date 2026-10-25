@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "Status LED control"
+dependencies:
+  idf: ">=5.1"

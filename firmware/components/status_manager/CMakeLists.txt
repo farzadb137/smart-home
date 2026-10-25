@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "status_manager.c"
+    SRCS "src/status_manager.c"
     INCLUDE_DIRS "include"
     REQUIRES
         logger

@@ -1,0 +1,5 @@
+menu "ota_manager"
+    config OTA_MANAGER_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

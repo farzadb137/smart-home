@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "Device provisioning / claiming against the hub"
+dependencies:
+  idf: ">=5.1"

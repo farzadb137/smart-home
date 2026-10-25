@@ -1,0 +1,18 @@
+name: Smart Switch
+id: smart-switch
+version: 0.5.1
+status: prototype          # concept | prototype | pilot | production | retired
+
+boards:
+  - id: smart-switch
+    rev: A
+
+firmware:
+  app: firmware/apps/smart-switch
+  target: esp32c6
+
+connectivity: [wifi]
+power: mains
+
+mechanical:
+  enclosure: null

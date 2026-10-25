@@ -1,0 +1,5 @@
+menu "status_manager"
+    config STATUS_MANAGER_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

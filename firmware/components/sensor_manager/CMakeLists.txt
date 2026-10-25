@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "sensor_manager.c"
+    SRCS "src/sensor_manager.c"
     INCLUDE_DIRS "include"
     REQUIRES logger
 )

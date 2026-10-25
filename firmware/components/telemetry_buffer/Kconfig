@@ -1,0 +1,5 @@
+menu "telemetry_buffer"
+    config TELEMETRY_BUFFER_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

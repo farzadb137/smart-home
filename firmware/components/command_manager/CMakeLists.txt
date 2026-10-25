@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "command_manager.c"
+    SRCS "src/command_manager.c"
     INCLUDE_DIRS "include"
     REQUIRES
         logger

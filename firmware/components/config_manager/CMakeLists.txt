@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "config_manager.c"
+    SRCS "src/config_manager.c"
     INCLUDE_DIRS "include"
     REQUIRES logger nvs_flash
 )

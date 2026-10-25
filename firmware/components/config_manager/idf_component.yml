@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "Persistent device configuration (NVS)"
+dependencies:
+  idf: ">=5.1"

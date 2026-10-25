@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "MQTT topic construction for this device"
+dependencies:
+  idf: ">=5.1"

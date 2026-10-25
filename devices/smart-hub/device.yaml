@@ -1,0 +1,12 @@
+name: Smart Hub
+id: smart-hub
+version: 0.1.0
+status: prototype
+
+boards: []                # runs on an Orange Pi, no custom board yet
+
+software:
+  backend: hub/backend
+  dashboard: hub/dashboard
+
+connectivity: [ethernet, wifi]
