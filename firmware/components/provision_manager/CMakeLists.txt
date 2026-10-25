@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "provision_manager.c"
+    SRCS "src/provision_manager.c"
     INCLUDE_DIRS "include"
     EMBED_TXTFILES "certs/hub_ca_cert.pem"
     REQUIRES

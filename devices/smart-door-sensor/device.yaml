@@ -1,0 +1,18 @@
+name: Smart Door Sensor
+id: smart-door-sensor
+version: 0.5.1
+status: prototype          # concept | prototype | pilot | production | retired
+
+boards:
+  - id: smart-door-sensor
+    rev: A
+
+firmware:
+  app: firmware/apps/smart-door-sensor
+  target: esp32c6
+
+connectivity: [wifi]
+power: battery
+
+mechanical:
+  enclosure: null

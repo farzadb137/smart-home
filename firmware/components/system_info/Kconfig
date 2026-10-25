@@ -1,0 +1,5 @@
+menu "system_info"
+    config SYSTEM_INFO_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

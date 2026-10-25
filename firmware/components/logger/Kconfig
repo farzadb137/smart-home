@@ -1,0 +1,5 @@
+menu "logger"
+    config LOGGER_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

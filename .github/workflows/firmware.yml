@@ -1,0 +1,12 @@
+name: firmware
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: espressif/idf:latest   # pin to the IDF version you develop with
+    strategy:
+      matrix:
+        app: [smart-temp-sensor, smart-switch, smart-door-sensor]
+    steps:
+      - uses: actions/checkout@v4
+      - run: cd firmware/apps/${{ matrix.app }} && idf.py set-target esp32c6 && idf.py build

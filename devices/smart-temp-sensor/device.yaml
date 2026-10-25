@@ -1,0 +1,17 @@
+name: Smart Temperature Sensor
+id: smart-temp-sensor
+version: 0.5.1
+status: prototype          # concept | prototype | pilot | production | retired
+
+boards:
+  - id: smart-temp-sensor
+    rev: A
+
+firmware:
+  app: firmware/apps/smart-temp-sensor
+  target: esp32c6
+
+connectivity: [wifi]
+
+mechanical:
+  enclosure: null

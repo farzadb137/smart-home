@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "system_info.c"
+    SRCS "src/system_info.c"
     INCLUDE_DIRS "include"
     REQUIRES esp_timer
 )

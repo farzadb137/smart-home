@@ -1,0 +1,5 @@
+menu "device_info"
+    config DEVICE_INFO_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

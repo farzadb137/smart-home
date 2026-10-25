@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "Application start-up and orchestration"
+dependencies:
+  idf: ">=5.1"

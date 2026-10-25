@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "Capability registry and sensor/actuator driver dispatch"
+dependencies:
+  idf: ">=5.1"

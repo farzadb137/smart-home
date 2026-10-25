@@ -1,0 +1,3 @@
+# Detected from the imports in src/hub. Pin the versions from your Orange Pi venv (`pip freeze`).
+flask
+paho-mqtt

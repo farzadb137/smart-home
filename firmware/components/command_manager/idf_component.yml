@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "Handles commands received from the hub and sends responses"
+dependencies:
+  idf: ">=5.1"

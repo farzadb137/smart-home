@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "Wi-Fi connection management"
+dependencies:
+  idf: ">=5.1"

@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "telemetry_manager.c"
+    SRCS "src/telemetry_manager.c"
     INCLUDE_DIRS "include"
     REQUIRES
         device_info

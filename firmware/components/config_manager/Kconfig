@@ -1,0 +1,5 @@
+menu "config_manager"
+    config CONFIG_MANAGER_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

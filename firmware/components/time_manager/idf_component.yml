@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "Time synchronisation (hub time broadcast)"
+dependencies:
+  idf: ">=5.1"

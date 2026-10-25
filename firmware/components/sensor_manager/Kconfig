@@ -1,0 +1,5 @@
+menu "sensor_manager"
+    config SENSOR_MANAGER_LOG_VERBOSE
+        bool "Verbose logging"
+        default n
+endmenu

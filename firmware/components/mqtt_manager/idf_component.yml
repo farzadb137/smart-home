@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "MQTT client connection, publish and subscribe"
+dependencies:
+  idf: ">=5.1"

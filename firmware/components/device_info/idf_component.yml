@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "Device type, hardware and firmware version information"
+dependencies:
+  idf: ">=5.1"

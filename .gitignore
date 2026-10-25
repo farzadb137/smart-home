@@ -1,49 +1,66 @@
-# ==========================================
-# Altium Designer Artifacts & Backups
-# ==========================================
-**/History/
-**/__Previews/
-**/Project Logs for */
-**/Project Outputs for */
+# ---------- Secrets ----------
+secrets/
+!secrets.example/
+*.pem
+!firmware/components/*/certs/*.pem   # public CA certs embedded into firmware
+*.key
+.env
+secrets.h
+
+# ---------- Altium ----------
+History/
+__Previews/
+Project Logs for*/
+Project Outputs for*/
+*.PrjPcbStructure
 *.SchDocPreview
 *.PcbDocPreview
 *.LOG
-*.Zip
-*.drc
 *.Dat
-*.PcbLib.ref*
-*.~*
 
-# ==========================================
-# Embedded & ESP-IDF Build Artifacts
-# ==========================================
-**/build/
-**/sdkconfig.old
-**/managed_components/
+# ---------- ESP-IDF ----------
+build/
+managed_components/
+sdkconfig
+sdkconfig.old
 
-# ==========================================
-# Python & Web Services
-# ==========================================
-**/__pycache__/
+# ---------- Python ----------
+__pycache__/
 *.py[cod]
-*$py.class
 .venv/
-env/
+venv/
+*.egg-info/
+.pytest_cache/
+*.db
 *.sqlite3
 
-# ==========================================
-# Operating System & IDE Clutter
-# ==========================================
+# ---------- Web / Node ----------
+node_modules/
+dist/
+
+# ---------- Mobile ----------
+*.iml
+.gradle/
+local.properties
+Pods/
+DerivedData/
+.dart_tool/
+
+# ---------- OS / IDE ----------
 .DS_Store
 Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# ---------- Added during migration ----------
+*.csr
+*.srl
+secrets.env
+.flask_secret_key
+hub/data/
+*.drc
+*.PcbLib.ref*
+*.~*
 *.swp
 *~
-
-# ==========================================
-# Hub Secrets & Cryptographic Keys
-# ==========================================
-**/*.key
-**/*.csr
-**/*.srl
-**/secrets.env
-**/flask_secret_key

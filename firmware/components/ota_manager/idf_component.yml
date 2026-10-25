@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "Over-the-air firmware update"
+dependencies:
+  idf: ">=5.1"

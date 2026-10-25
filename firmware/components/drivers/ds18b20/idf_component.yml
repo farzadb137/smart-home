@@ -1,0 +1,4 @@
+version: "0.1.0"
+description: "DS18B20 1-Wire temperature sensor driver"
+dependencies:
+  idf: ">=5.1"
