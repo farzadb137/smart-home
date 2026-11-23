@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smart-home.local/protocol/schemas/telemetry.schema.json",
+  "title": "Telemetry — device -> hub",
+  "description": "Observed implementation: firmware/components/telemetry_manager/src/telemetry_manager.c telemetry_manager_to_json(). Compatible with hub/backend/src/hub/mqtt_collector.py handle_telemetry(). Draft v1 — backward compatible, no breaking change.",
+  "type": "object",
+  "required": ["device", "system", "capabilities"],
+  "additionalProperties": false,
+  "properties": {
+    "device": {
+      "type": "object",
+      "required": ["id"],
+      "additionalProperties": true,
+      "properties": {
+        "id": {
+          "description": "Hardware ID. TODAY: JSON number (uint64, cJSON_AddNumber). FUTURE v2: 12-16 char hex string. Hub MUST accept both. Firmware MUST NOT change until v2 migration.",
+          "anyOf": [
+            { "type": "integer", "minimum": 0 },
+            { "type": "string", "pattern": "^[0-9A-Fa-f]{12}([0-9A-Fa-f]{4})?$" }
+          ]
+        },
+        "name": { "type": "string", "maxLength": 31 },
+        "type": {
+          "type": "string",
+          "description": "From device_type_to_string(). Known values today: temperature, switch, door-sensor (see device_info.h). Open string for forward compat.",
+          "examples": ["temperature", "switch", "door-sensor", "motion-sensor", "unknown"]
+        },
+        "firmware": { "type": "string", "maxLength": 16, "examples": ["0.5.1"] }
+      }
+    },
+    "system": {
+      "type": "object",
+      "required": ["uptime", "rssi", "time_valid"],
+      "additionalProperties": true,
+      "properties": {
+        "uptime": { "type": "integer", "minimum": 0, "description": "Seconds since boot." },
+        "rssi": { "type": "integer", "minimum": -100, "maximum": 10, "description": "Wi-Fi RSSI dBm." },
+        "timestamp": { "type": "integer", "minimum": 0, "description": "Unix epoch. Valid only if time_valid=true, else 0." },
+        "time_valid": { "type": "boolean" }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "Map capability name -> reading. Names limited by CAPABILITY_NAME_MAX=16, CAPABILITY_MAX=4 per node (sensor_manager/include/capability.h).",
+      "minProperties": 0,
+      "maxProperties": 16,
+      "patternProperties": {
+        "^[a-zA-Z_][a-zA-Z0-9_]{0,15}$": {
+          "type": "object",
+          "required": ["value", "valid"],
+          "additionalProperties": false,
+          "properties": {
+            "value": { "type": "number", "description": "Numeric value, or 0.0/1.0 for binary (CAP_TYPE_BINARY)." },
+            "valid": { "type": "boolean" }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "device": { "id": 305419896, "name": "Living-Temp-01", "type": "temperature", "firmware": "0.5.1" },
+      "system": { "uptime": 3600, "rssi": -65, "timestamp": 1760000000, "time_valid": true },
+      "capabilities": { "temperature": { "value": 23.5, "valid": true } }
+    }
+  ]
+}

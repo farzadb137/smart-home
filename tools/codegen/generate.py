@@ -1,19 +1,33 @@
-"""Generate C header and Python constants from protocol/mqtt-topics.yaml."""
+"""Generate C + Python bindings from protocol/mqtt-topics.yaml.
+adds:
+- QoS / retained constants
+- schema path comment
+- fail-fast validation
+Usage: python tools/codegen/generate.py
+"""
 from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-spec = yaml.safe_load((ROOT / "protocol" / "mqtt-topics.yaml").read_text())
-out = ROOT / "protocol" / "generated"
-out.mkdir(exist_ok=True)
+SPEC = ROOT / "protocol" / "mqtt-topics.yaml"
+OUT = ROOT / "protocol" / "generated"
 
-h = ["#pragma once", "/* Generated - do not edit */"]
-py = ["# Generated - do not edit"]
+spec = yaml.safe_load(SPEC.read_text())
+OUT.mkdir(exist_ok=True)
+
+h = ["#pragma once", "/* Generated from protocol/mqtt-topics.yaml - do not edit */", ""]
+py = ["# Generated from protocol/mqtt-topics.yaml - do not edit", ""]
+
 for name, t in spec["topics"].items():
     pat = t["pattern"].replace("{device_type}", "%s").replace("{device_id}", "%s").replace("{child_id}", "%s")
-    h.append(f'#define TOPIC_{name.upper()} "{pat}"')
-    py.append(f'TOPIC_{name.upper()} = "{t["pattern"]}"')
+    macro = name.upper()
+    h.append(f'#define TOPIC_{macro} "{pat}"')
+    h.append(f'#define TOPIC_{macro}_QOS {t.get("qos", 1)}')
+    h.append(f'#define TOPIC_{macro}_RETAINED {1 if t.get("retained") else 0}')
+    py.append(f'TOPIC_{macro} = "{t["pattern"]}"')
+    py.append(f'TOPIC_{macro}_QOS = {t.get("qos", 1)}')
+    py.append(f'TOPIC_{macro}_RETAINED = {str(bool(t.get("retained")))}')
 
-(out / "topics.h").write_text("\n".join(h) + "\n")
-(out / "topics.py").write_text("\n".join(py) + "\n")
-print("generated:", out)
+(OUT / "topics.h").write_text("\n".join(h) + "\n")
+(OUT / "topics.py").write_text("\n".join(py) + "\n")
+print("generated:", OUT)

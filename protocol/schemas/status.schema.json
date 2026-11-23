@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smart-home.local/protocol/schemas/status.schema.json",
+  "title": "Status — device -> hub (retained, LWT)",
+  "description": "Observed: firmware/components/status_manager/src/status_manager.c status_manager_to_json() + hub mqtt_collector.handle_status(). QoS 1, retained=true, LWT payload {id, online:false}.",
+  "type": "object",
+  "required": ["id", "online"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "anyOf": [
+        { "type": "integer", "minimum": 0 },
+        { "type": "string", "pattern": "^[0-9A-Fa-f]{12}([0-9A-Fa-f]{4})?$" }
+      ]
+    },
+    "online": { "type": "boolean" },
+    "uptime": { "type": "integer", "minimum": 0 },
+    "rssi": { "type": "integer", "minimum": -100, "maximum": 10 }
+  },
+  "examples": [
+    { "id": 305419896, "online": true, "uptime": 3600, "rssi": -65 },
+    { "id": 305419896, "online": false }
+  ]
+}

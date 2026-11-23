@@ -1,32 +1,66 @@
 version: 1
 prefix: home
-
-# Derived from hub/config/mosquitto/acl and hub/backend/src/hub/config.py
 topics:
   telemetry:
     pattern: "home/devices/{device_id}/telemetry"
     direction: device -> hub
+    qos: 1
+    retained: false
+    schema: schemas/telemetry.schema.json
   status:
     pattern: "home/devices/{device_id}/status"
     direction: device -> hub
+    qos: 1
+    retained: true
+    lwt: true
+    lwt_payload: '{"id": <id>, "online": false}'
+    schema: schemas/status.schema.json
   response:
     pattern: "home/devices/{device_id}/response"
     direction: device -> hub
+    qos: 1
+    retained: false
+    schema: schemas/response.schema.json
   command:
     pattern: "home/devices/{device_id}/command"
     direction: hub -> device
+    qos: 1
+    retained: false
+    timeout_sec: 5
+    schema: schemas/command.schema.json
   child_telemetry:
     pattern: "home/devices/{device_id}/children/{child_id}/telemetry"
     direction: device -> hub
+    qos: 1
+    retained: false
+    schema: schemas/telemetry.schema.json
   child_status:
     pattern: "home/devices/{device_id}/children/{child_id}/status"
     direction: device -> hub
+    qos: 1
+    retained: true
+    schema: schemas/status.schema.json
   child_command:
     pattern: "home/devices/{device_id}/children/{child_id}/command"
     direction: hub -> device
+    qos: 1
+    retained: false
+    schema: schemas/command.schema.json
   child_response:
     pattern: "home/devices/{device_id}/children/{child_id}/response"
     direction: device -> hub
+    qos: 1
+    retained: false
+    schema: schemas/response.schema.json
   time:
     pattern: "home/time"
     direction: hub -> all devices
+    qos: 1
+    retained: true
+    interval_sec: 60
+    schema: schemas/time-sync.schema.json
+rules:
+  - "Single source of truth: protocol/mqtt-topics.yaml. Generated bindings in protocol/generated/ (topics.h, topics.py). CI fails if out of date."
+  - "No hardcoded 'home/devices' strings outside topic_manager (firmware) and config.py (hub)."
+  - "Payloads validated against schemas/*.json. Invalid JSON -> dropped + logged, never crashes collector."
+  - "Device id in TOPIC is hex (012X/016X). Device id in JSON payload accepts int OR hex string for transition period."

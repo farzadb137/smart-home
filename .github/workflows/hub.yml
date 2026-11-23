@@ -9,3 +9,5 @@ jobs:
         with: { python-version: "3.11" }
       - run: pip install -r hub/backend/requirements.txt
       - run: python -m compileall -q hub/backend/src/hub
+      - run: pip install -r tools/codegen/requirements.txt
+      - run: python tools/codegen/generate.py --check

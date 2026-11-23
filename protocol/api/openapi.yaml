@@ -1,0 +1,125 @@
+openapi: 3.0.3
+info:
+  title: Smart Home Hub API
+  version: 1.0.0
+  description: >
+    Versioned REST contract for dashboard + mobile + installer UI.
+    Mirrors CURRENT Flask routes in hub/backend/src/hub/hub_app/devices.py
+    but under /api/v1. Keep legacy /api/* for 1 release, then deprecate.
+    Auth: session cookie (login_required). Future: bearer for mobile.
+servers:
+  - url: https://hub.local:5000
+    description: Orange Pi hub (self-signed, LAN)
+paths:
+  /api/v1/health:
+    get:
+      summary: Health
+      responses:
+        '200':
+          description: ok
+  /api/v1/devices:
+    get:
+      summary: List devices with latest readings
+      responses:
+        '200':
+          description: devices
+  /api/v1/devices/{hardwareId}:
+    get:
+      summary: Get one device
+      parameters:
+        - name: hardwareId
+          in: path
+          required: true
+          schema: { type: string, pattern: '^[0-9A-Fa-f]{12}([0-9A-Fa-f]{4})?$' }
+      responses:
+        '200': { description: device }
+        '400': { description: invalid id }
+        '404': { description: not found }
+  /api/v1/devices/{hardwareId}/telemetry:
+    get:
+      summary: Recent readings (max 100)
+      parameters:
+        - name: hardwareId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: capability
+          in: query
+          schema: { type: string }
+      responses:
+        '200': { description: telemetry rows }
+  /api/v1/devices/{hardwareId}/history:
+    get:
+      summary: Aggregated history
+      parameters:
+        - name: hardwareId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: capability
+          in: query
+          required: true
+          schema: { type: string }
+        - name: range
+          in: query
+          schema: { type: string, enum: [24h, 7d, 30d, 90d, 1y] }
+      responses:
+        '200': { description: history }
+  /api/v1/devices/{hardwareId}/command:
+    post:
+      summary: Send command, wait for response (5s timeout -> 504)
+      parameters:
+        - name: hardwareId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Command'
+      responses:
+        '200': { description: device response }
+        '504': { description: device did not respond }
+  /api/v1/devices/{hardwareId}/rename:
+    post:
+      summary: Rename (maps to set_config device_name, max 31 chars)
+      parameters:
+        - name: hardwareId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 31 }
+      responses:
+        '200': { description: renamed }
+components:
+  schemas:
+    Command:
+      type: object
+      required: [command]
+      properties:
+        command:
+          type: string
+          enum: [get_config, get_status, get_telemetry, set_config, set_capability, restart, ota_update]
+        data:
+          type: object
+    Device:
+      type: object
+      properties:
+        hardware_id_hex: { type: string }
+        name: { type: string }
+        type: { type: string }
+        firmware: { type: string }
+        online: { type: boolean }
+        rssi: { type: integer, nullable: true }
+        uptime: { type: integer, nullable: true }
+        room_id: { type: integer, nullable: true }

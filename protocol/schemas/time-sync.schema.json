@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smart-home.local/protocol/schemas/time-sync.schema.json",
+  "title": "Time sync — hub -> all devices (retained broadcast)",
+  "description": "Observed: mqtt_collector.py time_sync_publisher() every 60s, QoS 1, retained=true on home/time.",
+  "type": "object",
+  "required": ["epoch"],
+  "additionalProperties": false,
+  "properties": {
+    "epoch": { "type": "integer", "minimum": 0, "description": "Hub wall-clock Unix epoch." }
+  },
+  "examples": [{ "epoch": 1760000000 }]
+}

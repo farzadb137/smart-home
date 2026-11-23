@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smart-home.local/protocol/schemas/command.schema.json",
+  "title": "Command — hub -> device",
+  "description": "Observed: firmware/components/command_manager/src/command_manager.c command_table + hub hub_app/mqtt_commander.py send(). Topic home/devices/{id}/command, QoS 1, retained=false, timeout 5s (COMMAND_RESPONSE_TIMEOUT_SEC).",
+  "type": "object",
+  "required": ["command"],
+  "additionalProperties": false,
+  "properties": {
+    "command": {
+      "type": "string",
+      "enum": ["get_config", "get_status", "get_telemetry", "set_config", "set_capability", "restart", "ota_update"]
+    },
+    "data": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "command": { "const": "set_capability" } } },
+      "then": {
+        "required": ["command", "data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["name", "value"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "maxLength": 16 },
+              "value": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "command": { "const": "set_config" } } },
+      "then": {
+        "properties": {
+          "data": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": false,
+            "properties": {
+              "device_name": { "type": "string", "minLength": 1, "maxLength": 31 },
+              "telemetry_interval_sec": { "type": "integer", "minimum": 5, "maximum": 86400 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "command": { "const": "ota_update" } } },
+      "then": {
+        "required": ["command", "data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["url", "sha256"],
+            "additionalProperties": false,
+            "properties": {
+              "url": { "type": "string", "format": "uri", "maxLength": 256 },
+              "version": { "type": "string", "maxLength": 16 },
+              "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "examples": [
+    { "command": "get_telemetry" },
+    { "command": "set_capability", "data": { "name": "relay", "value": 1 } },
+    { "command": "set_config", "data": { "device_name": "Living-Switch-01" } }
+  ]
+}

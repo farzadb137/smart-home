@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://smart-home.local/protocol/schemas/response.schema.json",
+  "title": "Response — device -> hub",
+  "description": "Observed: command_manager send_response() in all handlers. Topic home/devices/{id}/response, QoS 1, retained=false.",
+  "type": "object",
+  "required": ["success"],
+  "additionalProperties": false,
+  "properties": {
+    "success": { "type": "boolean" },
+    "data": { "type": "object" },
+    "error": { "type": "string", "maxLength": 256 }
+  },
+  "examples": [
+    { "success": true, "data": { "name": "relay", "value": 1 } },
+    { "success": false, "error": "Unknown capability" },
+    { "success": true, "data": { "message": "OTA started" } }
+  ]
+}
