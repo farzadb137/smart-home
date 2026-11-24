@@ -6,6 +6,7 @@ import paho.mqtt.client as mqtt
 
 from config import BROKER_HOST, BROKER_PORT, COMMAND_RESPONSE_TIMEOUT_SEC
 from config import HUB_COMMANDER_PASSWORD, HUB_COMMANDER_USERNAME
+from config import RESPONSE_SUB, CHILD_RESPONSE_SUB, format_command_topic
 
 
 class MqttCommander:
@@ -21,8 +22,8 @@ class MqttCommander:
 
 	def _on_connect(self, client, userdata, flags, reason_code, properties):
 		print(f"[MQTT-CMD] Connected: {reason_code}")
-		client.subscribe("home/devices/+/response")
-		client.subscribe("home/devices/+/children/+/response")
+		client.subscribe(RESPONSE_SUB)
+		client.subscribe(CHILD_RESPONSE_SUB)
 
 	def _on_message(self, client, userdata, message):
 		parts = message.topic.split("/")
@@ -47,10 +48,7 @@ class MqttCommander:
 			self._pending_responses[hardware_id_hex] = response_queue
 
 		try:
-			if parent_hardware_id_hex:
-				topic = f"home/devices/{parent_hardware_id_hex}/children/{hardware_id_hex}/command"
-			else:
-				topic = f"home/devices/{hardware_id_hex}/command"
+			topic = format_command_topic(hardware_id_hex, parent_hardware_id_hex)
 
 			self._client.publish(topic, json.dumps(command_payload), qos=1)
 			try:

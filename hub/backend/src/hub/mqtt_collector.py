@@ -12,7 +12,8 @@ from config import (
     TELEMETRY_TOPIC,
     STATUS_TOPIC,
     CHILD_TELEMETRY_TOPIC,
-    CHILD_STATUS_TOPIC
+    CHILD_STATUS_TOPIC,
+    TIME_SYNC_TOPIC
 )
 from database import (
     migrate_database,
@@ -22,7 +23,6 @@ from database import (
     mark_offline_devices
 )
 
-TIME_SYNC_TOPIC = "home/time"
 TIME_SYNC_INTERVAL_SEC = 60
 OFFLINE_TIMEOUT_SEC = 30
 OFFLINE_CHECK_INTERVAL_SEC = 5

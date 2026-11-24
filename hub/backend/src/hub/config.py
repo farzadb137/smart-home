@@ -1,4 +1,5 @@
 import os
+import importlib.util
 
 def _require_env(name):
 	value = os.environ.get(name)
@@ -25,10 +26,52 @@ BROKER_PORT = int(_env("BROKER_PORT", "1883"))
 BROKER_USERNAME = _env("BROKER_USERNAME", "hub_collector")
 BROKER_PASSWORD = _require_env("BROKER_PASSWORD")
 
-TELEMETRY_TOPIC = _env("TELEMETRY_TOPIC", "home/devices/+/telemetry")
-STATUS_TOPIC = _env("STATUS_TOPIC", "home/devices/+/status")
-CHILD_TELEMETRY_TOPIC = _env("CHILD_TELEMETRY_TOPIC", "home/devices/+/children/+/telemetry")
-CHILD_STATUS_TOPIC = _env("CHILD_STATUS_TOPIC", "home/devices/+/children/+/status")
+# PROJECT_ROOT in this file is <repo>/hub, so REPO_ROOT is <repo>/
+REPO_ROOT = os.path.dirname(PROJECT_ROOT)
+GENERATED_TOPICS_PY = os.path.join(REPO_ROOT, "protocol", "generated", "topics.py")
+
+def _load_generated_topics():
+    defaults = {
+        "TOPIC_TELEMETRY": "home/devices/{device_id}/telemetry",
+        "TOPIC_STATUS": "home/devices/{device_id}/status",
+        "TOPIC_RESPONSE": "home/devices/{device_id}/response",
+        "TOPIC_COMMAND": "home/devices/{device_id}/command",
+        "TOPIC_CHILD_TELEMETRY": "home/devices/{device_id}/children/{child_id}/telemetry",
+        "TOPIC_CHILD_STATUS": "home/devices/{device_id}/children/{child_id}/status",
+        "TOPIC_CHILD_COMMAND": "home/devices/{device_id}/children/{child_id}/command",
+        "TOPIC_CHILD_RESPONSE": "home/devices/{device_id}/children/{child_id}/response",
+        "TOPIC_TIME": "home/time",
+    }
+    try:
+        spec = importlib.util.spec_from_file_location("generated_topics", GENERATED_TOPICS_PY)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        for k in defaults:
+            if hasattr(mod, k):
+                defaults[k] = getattr(mod, k)
+    except Exception as e:
+        print(f"[CONFIG] Could not load {GENERATED_TOPICS_PY}, using fallbacks: {e}")
+    return defaults
+
+_GENERATED = _load_generated_topics()
+
+def _sub(pattern):
+    # "home/devices/{device_id}/telemetry" -> "home/devices/+/telemetry"
+    return pattern.replace("{device_id}", "+").replace("{child_id}", "+")
+
+TELEMETRY_TOPIC = _env("TELEMETRY_TOPIC", _sub(_GENERATED["TOPIC_TELEMETRY"]))
+STATUS_TOPIC = _env("STATUS_TOPIC", _sub(_GENERATED["TOPIC_STATUS"]))
+CHILD_TELEMETRY_TOPIC = _env("CHILD_TELEMETRY_TOPIC", _sub(_GENERATED["TOPIC_CHILD_TELEMETRY"]))
+CHILD_STATUS_TOPIC = _env("CHILD_STATUS_TOPIC", _sub(_GENERATED["TOPIC_CHILD_STATUS"]))
+RESPONSE_SUB = _env("RESPONSE_SUB", _sub(_GENERATED["TOPIC_RESPONSE"]))
+CHILD_RESPONSE_SUB = _env("CHILD_RESPONSE_SUB", _sub(_GENERATED["TOPIC_CHILD_RESPONSE"]))
+TIME_SYNC_TOPIC = _env("TIME_SYNC_TOPIC", _GENERATED["TOPIC_TIME"])
+
+# publish helpers - single place that formats topics
+def format_command_topic(device_hex, parent_hex=None):
+    if parent_hex:
+        return _GENERATED["TOPIC_CHILD_COMMAND"].replace("{device_id}", parent_hex).replace("{child_id}", device_hex)
+    return _GENERATED["TOPIC_COMMAND"].replace("{device_id}", device_hex)
 
 RAW_TELEMETRY_RETENTION_DAYS = int(_env("RAW_TELEMETRY_RETENTION_DAYS", "90"))
 
