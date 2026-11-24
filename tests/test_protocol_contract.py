@@ -12,7 +12,7 @@ except ImportError:
     HAS = False
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-SCH = ROOT / "option-a-protocol" / "schemas"
+SCH = ROOT / "protocol" / "schemas"
 
 def load(name):
     return json.loads((SCH / name).read_text())
@@ -41,7 +41,7 @@ def test_command_set_capability():
 
 def test_no_hardcoded_topics_in_components():
     # Guard for §6.2 + §14.1: only topic_manager may contain home/devices
-    repo = pathlib.Path("smart-home-audit/firmware/components")
+    repo = ROOT / "firmware" / "components"
     bad = []
     for p in repo.rglob("*.c"):
         if "topic_manager" in str(p):
