@@ -2,10 +2,9 @@
 
 #include "sensor_manager.h"
 #include "logger.h"
+#include "bsp.h"
 
 #include "driver/gpio.h"
-
-#define RELAY_GPIO 18
 
 static const char *TAG = "RELAY";
 
@@ -16,7 +15,7 @@ static const char *TAG = "RELAY";
 static esp_err_t relay_driver_init(void){
 
     gpio_config_t config = {
-        .pin_bit_mask = (1ULL << RELAY_GPIO),
+        .pin_bit_mask = (1ULL << BSP_RELAY_GPIO),
         .mode = GPIO_MODE_INPUT_OUTPUT,
         .pull_up_en = GPIO_PULLUP_DISABLE,
         .pull_down_en = GPIO_PULLDOWN_ENABLE,
@@ -27,13 +26,13 @@ static esp_err_t relay_driver_init(void){
     if(err != ESP_OK)
         return err;
 
-    return gpio_set_level(RELAY_GPIO, 0);
+    return gpio_set_level(BSP_RELAY_GPIO, 0);
 
 }
 
 static bool relay_driver_read(float *value){
 
-    *value = gpio_get_level(RELAY_GPIO) ? 1.0f : 0.0f;
+    *value = gpio_get_level(BSP_RELAY_GPIO) ? 1.0f : 0.0f;
 
     return true;
 
@@ -43,7 +42,7 @@ static esp_err_t relay_driver_write(float value){
 
     LOG_INFO(TAG, "Setting relay %s", (value != 0.0f) ? "ON" : "OFF");
 
-    return gpio_set_level(RELAY_GPIO, (value != 0.0f) ? 1 : 0);
+    return gpio_set_level(BSP_RELAY_GPIO, (value != 0.0f) ? 1 : 0);
 
 }
 

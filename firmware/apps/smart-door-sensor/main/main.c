@@ -1,3 +1,4 @@
+#include "bsp.h"
 #include "led_manager.h"
 #include "logger.h"
 #include "config_manager.h"
@@ -13,6 +14,8 @@
 #include "capability_drivers.h"
 
 void app_main(void){
+	
+	bsp_init();
 
     led_manager_init();
     led_manager_set_state(LED_STATE_BOOT);

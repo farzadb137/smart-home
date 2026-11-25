@@ -1,12 +1,11 @@
 #include "capability_drivers.h"
 
 #include "sensor_manager.h"
+#include "bsp.h"
 
 #include "driver/gpio.h"
 
-#define CONTACT_GPIO 18
-
-/* Reed switch wired between CONTACT_GPIO and GND. Internal pull-up holds
+/* Reed switch wired between BSP_CONTACT_GPIO and GND. Internal pull-up holds
  * the pin HIGH when the reed's contacts are open. This assumes the
  * common "normally open" (NO) reed switch type:
  *   - Door CLOSED (magnet near)  -> contacts close -> pin pulled LOW
@@ -17,7 +16,7 @@
 static esp_err_t contact_driver_init(void){
 
     gpio_config_t config = {
-        .pin_bit_mask = (1ULL << CONTACT_GPIO),
+        .pin_bit_mask = (1ULL << BSP_CONTACT_GPIO),
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
@@ -34,7 +33,7 @@ static bool contact_driver_read(float *value){
      * CAPABILITY_POLL_PERIOD_MS in sensor_manager), not an edge
      * interrupt - any mechanical bounce has long settled by the next
      * poll, so reading the steady-state level directly is correct. */
-    *value = gpio_get_level(CONTACT_GPIO) ? 1.0f : 0.0f;
+    *value = gpio_get_level(BSP_CONTACT_GPIO) ? 1.0f : 0.0f;
 
     return true;
 

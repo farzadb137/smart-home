@@ -1,0 +1,8 @@
+#include "bsp.h"
+#include "esp_log.h"
+static const char *TAG = "BSP";
+esp_err_t bsp_init(void)
+{
+    ESP_LOGI(TAG, "board=%s rev=%s target=%s (placeholder, verify PIR GPIO)", BSP_BOARD_ID, BSP_BOARD_REV, BSP_TARGET);
+    return ESP_OK;
+}

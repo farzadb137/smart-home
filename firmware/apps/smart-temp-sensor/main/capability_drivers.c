@@ -2,11 +2,10 @@
 
 #include "sensor_manager.h"
 #include "ds18b20.h"
-
-#define TEMPERATURE_GPIO 18
+#include "bsp.h"
 
 static esp_err_t temperature_driver_init(void){
-    return ds18b20_init(TEMPERATURE_GPIO);
+    return ds18b20_init(BSP_TEMP_GPIO);
 }
 
 static bool temperature_driver_read(float *value){
