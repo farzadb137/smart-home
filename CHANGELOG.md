@@ -8,19 +8,33 @@ All notable changes are documented here. Format: [Keep a Changelog](https://keep
 - button_manager_init(gpio), led_manager_init(gpio,count) from BSP
 
 ### Added
-- `protocol/schemas/`: telemetry, status, command, response, time-sync JSON schemas (draft v1, backward compatible).
-  Device id accepts int OR 12/16-char hex string (transition period for JS 2^53).
-- `protocol/api/openapi.yaml`: versioned REST `/api/v1/*` mirroring current Flask `/api/*` (health, devices, telemetry, history, command, rename). Keep legacy `/api/*` for 1 release.
-- `protocol/generated/topics.h` + `topics.py`: now emit `TOPIC_*` + `TOPIC_*_QOS` + `TOPIC_*_RETAINED` from `mqtt-topics.yaml`.
-- `tools/codegen/requirements.txt`: `pyyaml>=6.0`, `jsonschema>=4.0`, `pytest>=7.0`.
-- `tests/test_protocol_contract.py`: 4 tests (telemetry valid incl. hex id, status LWT, command + negative, no hardcoded topics).
+- `hub/backend/src/hub/schema_validation.py`: shared validators for
+  `command/response/telemetry/status/time-sync` against `protocol/schemas/*.json`.
+  Skips gracefully if `jsonschema` or schemas missing (dev), enforces in CI/prod.
+- `hub/backend/src/hub/hub_app/devices.py`: dual routes — every `/api/*`
+  now also serves `/api/v1/*` per `protocol/api/openapi.yaml`.
+  Legacy `/api/*` kept for 1 release. Outgoing `command` payloads validated
+  (400 on bad shape) before MQTT publish.
+- `hub/backend/src/hub/hub_app/__init__.py`: `/api/v1/health` alongside `/api/health`.
+- `tests/test_hub_contract.py`: 8 tests (pinned deps, v1 routes + legacy,
+  openapi parity, command/response/telemetry/status validation,
+  commander + collector guards).
 
 ### Changed
-- `protocol/mqtt-topics.yaml`: topic STRINGS unchanged. Only added `qos/retained/timeout_sec/interval_sec/schema/lwt` + rules block observed from code.
-- `tools/codegen/generate.py`: supports `--check` for CI, includes schema path comments, fail-fast.
-- `firmware/components/topic_manager/src/topic_manager.c`: uses `topics.h` (`TOPIC_TELEMETRY/STATUS/COMMAND/RESPONSE/TIME`), no hardcoded strings.
-- `hub/backend/src/hub/config.py`: single source — loads `protocol/generated/topics.py`, exposes `TELEMETRY_TOPIC/STATUS_TOPIC/RESPONSE_SUB/CHILD_*/TIME_SYNC_TOPIC` via `_sub()` (+→wildcard) + `format_command_topic()`. `mqtt_collector.py` + `hub_app/mqtt_commander.py` import from config.
-- `.github/workflows/hub.yml`: gate — install both requirements, `python tools/codegen/generate.py`, `git diff --exit-code protocol/generated/`, `pytest tests/test_protocol_contract.py -v`.
+- `hub/backend/requirements.txt`: pinned `flask==3.1.0`, `paho-mqtt==2.1.0`,
+  `jsonschema==4.23.0`. Regenerate from Pi venv on upgrade
+  (`pip freeze | grep -Ei 'flask|paho|jsonschema'`).
+- `hub/backend/src/hub/hub_app/mqtt_commander.py`: device `response`
+  validated against `response.schema.json`. Non-JSON or schema-invalid
+  -> `False, {"error": "Invalid device response: ..."}` ( surfaces as 504 ).
+  Timeout behavior unchanged.
+- `hub/backend/src/hub/mqtt_collector.py`: `handle_telemetry/handle_status`
+  validate against schemas first; invalid -> log + drop, never DB write,
+  never crash (fail-closed on bad payloads).
+- `.github/workflows/hub.yml`: runs all 4 contract suites
+  (`protocol + hub + bsp + bsp_full`) + `generate --check` + `compileall`.
 
 ### Rule
-- Edit ONLY `protocol/mqtt-topics.yaml`, then re-run `python tools/codegen/generate.py`. Never edit `protocol/generated/` by hand.
+- REST shapes follow `protocol/api/openapi.yaml`; MQTT payloads follow
+  `protocol/schemas/*.json`. Change schemas first, then code.
+- Keep legacy `/api/*` until mobile/dashboard moved to `/api/v1/*`, then remove in one release.

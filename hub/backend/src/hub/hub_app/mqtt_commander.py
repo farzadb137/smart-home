@@ -8,6 +8,12 @@ from config import BROKER_HOST, BROKER_PORT, COMMAND_RESPONSE_TIMEOUT_SEC
 from config import HUB_COMMANDER_PASSWORD, HUB_COMMANDER_USERNAME
 from config import RESPONSE_SUB, CHILD_RESPONSE_SUB, format_command_topic
 
+try:
+    from schema_validation import validate_response
+except ImportError:  # pragma: no cover
+    def validate_response(payload):
+        return True, None
+
 
 class MqttCommander:
 	def __init__(self):
@@ -53,9 +59,18 @@ class MqttCommander:
 			self._client.publish(topic, json.dumps(command_payload), qos=1)
 			try:
 				raw = response_queue.get(timeout=COMMAND_RESPONSE_TIMEOUT_SEC)
-				return True, json.loads(raw)
 			except queue.Empty:
 				return False, {"error": "Device did not respond in time"}
+			try:
+				response = json.loads(raw)
+			except json.JSONDecodeError:
+				print("[MQTT-CMD] Invalid response JSON")
+				return False, {"error": "Invalid device response: not JSON"}
+			ok_resp, resp_err = validate_response(response)
+			if not ok_resp:
+				print(f"[MQTT-CMD] Invalid response schema: {resp_err}")
+				return False, {"error": f"Invalid device response: {resp_err}"}
+			return True, response
 		finally:
 			with self._lock:
 				self._pending_responses.pop(hardware_id_hex, None)

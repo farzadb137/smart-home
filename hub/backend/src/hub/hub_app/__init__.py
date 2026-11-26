@@ -45,7 +45,8 @@ def create_app():
 		return app.send_static_file("add-device.html")
 
 	@app.route("/api/health")
+	@app.route("/api/v1/health")
 	def health():
-		return {"status":"ok"}
+		return {"status": "ok"}
 
 	return app

@@ -15,6 +15,14 @@ from config import (
     CHILD_STATUS_TOPIC,
     TIME_SYNC_TOPIC
 )
+try:
+    from schema_validation import validate_status, validate_telemetry
+except ImportError:  # pragma: no cover
+    def validate_status(payload):
+        return True, None
+    def validate_telemetry(payload):
+        return True, None
+
 from database import (
     migrate_database,
     get_or_create_device,
@@ -75,6 +83,11 @@ def handle_status(message, parent_hardware_id=None):
         print("[MQTT] Invalid status JSON")
         return
 
+    ok_st, st_err = validate_status(payload)
+    if not ok_st:
+        print(f"[MQTT] Invalid status schema, dropping: {st_err}")
+        return
+
     hardware_id = payload.get("id")
     online = payload.get("online", False)
     uptime = payload.get("uptime")
@@ -94,6 +107,11 @@ def handle_telemetry(message, parent_hardware_id=None):
         payload = json.loads(message.payload.decode())
     except json.JSONDecodeError:
         print("[MQTT] Invalid telemetry JSON")
+        return
+
+    ok_tel, tel_err = validate_telemetry(payload)
+    if not ok_tel:
+        print(f"[MQTT] Invalid telemetry schema, dropping: {tel_err}")
         return
 
     device = payload.get("device", {})

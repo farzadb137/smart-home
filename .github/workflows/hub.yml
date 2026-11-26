@@ -11,5 +11,5 @@ jobs:
       - run: pip install -r tools/codegen/requirements.txt
       - run: python tools/codegen/generate.py
       - run: git diff --exit-code protocol/generated/
-      - run: python -m pytest tests/test_protocol_contract.py -v
+      - run: python -m pytest tests/test_protocol_contract.py tests/test_hub_contract.py tests/test_bsp_contract.py tests/test_bsp_full_contract.py -v
       - run: python -m compileall -q hub/backend/src/hub

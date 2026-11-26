@@ -1,3 +1,8 @@
-# Detected from the imports in src/hub. Pin the versions from your Orange Pi venv (`pip freeze`).
-flask
-paho-mqtt
+# Pinned runtime deps for hub backend (Option C).
+# Regenerate from Orange Pi venv when upgrading:
+#   pip freeze | grep -Ei 'flask|paho|jsonschema' 
+# paho-mqtt 2.x required (uses CallbackAPIVersion.VERSION2).
+# jsonschema required for protocol/schemas validation (Option A+C).
+flask==3.1.0
+paho-mqtt==2.1.0
+jsonschema==4.23.0

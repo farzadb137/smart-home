@@ -13,6 +13,15 @@ from hub_app.auth import login_required
 from hub_app.mqtt_commander import send_device_command
 from hub_app.config import HARDWARE_ID_PATTERN, VALID_HISTORY_RANGES
 
+try:
+    from schema_validation import validate_command
+    from schema_validation import validate_response  # re-export guard (commander also validates)
+except ImportError:  # pragma: no cover
+    def validate_command(payload):
+        return True, None
+    def validate_response(payload):
+        return True, None
+
 bp = Blueprint("devices", __name__)
 
 _DEVICE_QUERY = """
@@ -80,6 +89,7 @@ def _resolve_parent_hardware_id_hex(hardware_id_hex):
 	return True, f"{device['parent_hardware_id']:012X}"
 
 @bp.route("/api/devices")
+@bp.route("/api/v1/devices")
 @login_required
 def get_devices():
 	connection = get_connection()
@@ -94,6 +104,7 @@ def get_devices():
 	])
 
 @bp.route("/api/devices/<hardware_id_hex>")
+@bp.route("/api/v1/devices/<hardware_id_hex>")
 @login_required
 def get_device(hardware_id_hex):
 	if not _valid_hardware_id(hardware_id_hex):
@@ -113,6 +124,7 @@ def get_device(hardware_id_hex):
 	return jsonify(_serialize_device(row, readings))
 
 @bp.route("/api/devices/<hardware_id_hex>/telemetry")
+@bp.route("/api/v1/devices/<hardware_id_hex>/telemetry")
 @login_required
 def get_telemetry(hardware_id_hex):
 	if not _valid_hardware_id(hardware_id_hex):
@@ -169,6 +181,7 @@ def get_telemetry(hardware_id_hex):
 	])
 
 @bp.route("/api/devices/<hardware_id_hex>/command", methods=["POST"])
+@bp.route("/api/v1/devices/<hardware_id_hex>/command", methods=["POST"])
 @login_required
 def send_command(hardware_id_hex):
 	if not _valid_hardware_id(hardware_id_hex):
@@ -189,6 +202,10 @@ def send_command(hardware_id_hex):
 	if "data" in payload:
 		command_payload["data"] = payload["data"]
 
+	ok_cmd, cmd_err = validate_command(command_payload)
+	if not ok_cmd:
+		return jsonify({"error": f"Invalid command: {cmd_err}"}), 400
+
 	ok, response = send_device_command(hardware_id_hex, command_payload, parent_hardware_id_hex)
 	if not ok:
 		return jsonify({"success": False, "error": response.get("error", "Command failed")}), 504
@@ -204,6 +221,7 @@ def send_command(hardware_id_hex):
 	return jsonify(response)
 
 @bp.route("/api/devices/<hardware_id_hex>/rename", methods=["POST"])
+@bp.route("/api/v1/devices/<hardware_id_hex>/rename", methods=["POST"])
 @login_required
 def rename_device(hardware_id_hex):
 	if not _valid_hardware_id(hardware_id_hex):
@@ -223,6 +241,9 @@ def rename_device(hardware_id_hex):
 		return jsonify({"success": False, "error": "Name must be 31 characters or fewer"}), 400
 
 	command_payload = {"command": "set_config", "data": {"device_name": new_name}}
+	ok_cmd, cmd_err = validate_command(command_payload)
+	if not ok_cmd:
+		return jsonify({"success": False, "error": f"Invalid command: {cmd_err}"}), 400
 	ok, response = send_device_command(hardware_id_hex, command_payload, parent_hardware_id_hex)
 
 	if not ok:
@@ -239,6 +260,7 @@ def rename_device(hardware_id_hex):
 	return jsonify(response)
 
 @bp.route("/api/devices/<hardware_id_hex>/history")
+@bp.route("/api/v1/devices/<hardware_id_hex>/history")
 @login_required
 def get_history(hardware_id_hex):
 	if not _valid_hardware_id(hardware_id_hex):
