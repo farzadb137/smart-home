@@ -8,6 +8,8 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install -r hub/backend/requirements.txt
-      - run: python -m compileall -q hub/backend/src/hub
       - run: pip install -r tools/codegen/requirements.txt
-      - run: python tools/codegen/generate.py --check
+      - run: python tools/codegen/generate.py
+      - run: git diff --exit-code protocol/generated/
+      - run: python -m pytest tests/test_protocol_contract.py -v
+      - run: python -m compileall -q hub/backend/src/hub

@@ -3,27 +3,44 @@
 TOPIC_TELEMETRY = "home/devices/{device_id}/telemetry"
 TOPIC_TELEMETRY_QOS = 1
 TOPIC_TELEMETRY_RETAINED = False
+# schema: schemas/telemetry.schema.json
+
 TOPIC_STATUS = "home/devices/{device_id}/status"
 TOPIC_STATUS_QOS = 1
 TOPIC_STATUS_RETAINED = True
+# schema: schemas/status.schema.json
+
 TOPIC_RESPONSE = "home/devices/{device_id}/response"
 TOPIC_RESPONSE_QOS = 1
 TOPIC_RESPONSE_RETAINED = False
+# schema: schemas/response.schema.json
+
 TOPIC_COMMAND = "home/devices/{device_id}/command"
 TOPIC_COMMAND_QOS = 1
 TOPIC_COMMAND_RETAINED = False
+# schema: schemas/command.schema.json
+
 TOPIC_CHILD_TELEMETRY = "home/devices/{device_id}/children/{child_id}/telemetry"
 TOPIC_CHILD_TELEMETRY_QOS = 1
 TOPIC_CHILD_TELEMETRY_RETAINED = False
+# schema: schemas/telemetry.schema.json
+
 TOPIC_CHILD_STATUS = "home/devices/{device_id}/children/{child_id}/status"
 TOPIC_CHILD_STATUS_QOS = 1
 TOPIC_CHILD_STATUS_RETAINED = True
+# schema: schemas/status.schema.json
+
 TOPIC_CHILD_COMMAND = "home/devices/{device_id}/children/{child_id}/command"
 TOPIC_CHILD_COMMAND_QOS = 1
 TOPIC_CHILD_COMMAND_RETAINED = False
+# schema: schemas/command.schema.json
+
 TOPIC_CHILD_RESPONSE = "home/devices/{device_id}/children/{child_id}/response"
 TOPIC_CHILD_RESPONSE_QOS = 1
 TOPIC_CHILD_RESPONSE_RETAINED = False
+# schema: schemas/response.schema.json
+
 TOPIC_TIME = "home/time"
 TOPIC_TIME_QOS = 1
 TOPIC_TIME_RETAINED = True
+# schema: schemas/time-sync.schema.json

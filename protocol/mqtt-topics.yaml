@@ -1,5 +1,8 @@
 version: 1
 prefix: home
+# Option A close-out: topic STRINGS unchanged from original.
+# Only adds delivery metadata observed in code (QoS/retain/timeout/schema/LWT).
+# Single source of truth. Edit ONLY here, then: python tools/codegen/generate.py
 topics:
   telemetry:
     pattern: "home/devices/{device_id}/telemetry"
@@ -63,4 +66,4 @@ rules:
   - "Single source of truth: protocol/mqtt-topics.yaml. Generated bindings in protocol/generated/ (topics.h, topics.py). CI fails if out of date."
   - "No hardcoded 'home/devices' strings outside topic_manager (firmware) and config.py (hub)."
   - "Payloads validated against schemas/*.json. Invalid JSON -> dropped + logged, never crashes collector."
-  - "Device id in TOPIC is hex (012X/016X). Device id in JSON payload accepts int OR hex string for transition period."
+  - "Device id in TOPIC is hex (12/16 chars). Device id in JSON payload accepts int OR hex string for transition period."
