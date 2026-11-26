@@ -19,7 +19,7 @@ void app_main(void){
 	bsp_init();
 
     //1. LED Indication
-    led_manager_init();
+    led_manager_init(BSP_LED_GPIO, BSP_LED_COUNT);
     led_manager_set_state(LED_STATE_BOOT);
 
     // 2. Logging
@@ -29,7 +29,7 @@ void app_main(void){
     config_manager_init();
 
     //4. General purpose button
-    button_manager_init();
+    button_manager_init(BSP_BUTTON_GPIO);
 
     // 5. Static information
     device_info_init(DEVICE_TYPE_TEMPERATURE, "SmartTemp-V1.0", "0.5.1");

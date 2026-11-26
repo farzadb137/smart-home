@@ -7,15 +7,16 @@
 #include "led_strip.h"
 #include "led_strip_rmt.h"
 
-#define LED_GPIO        8
-#define LED_COUNT       1
-
 static const char *TAG = "LED";
 
 static led_strip_handle_t led_strip = NULL;
 
 static led_state_t current_state = LED_STATE_BOOT;
 static TaskHandle_t led_task_handle = NULL;
+
+
+static int s_led_gpio = -1;
+static int s_led_count = 0;
 
 /*==========================================================
  * Private Functions
@@ -111,11 +112,19 @@ static void led_task(void *arg){
  * Public Functions
  *=========================================================*/
 
-esp_err_t led_manager_init(void){
+esp_err_t led_manager_init(int gpio_num, int led_count){
+
+    if(gpio_num < 0 || led_count <= 0 || led_count > 16){
+        LOG_ERROR(TAG, "invalid LED config gpio=%d count=%d", gpio_num, led_count);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    s_led_gpio = gpio_num;
+    s_led_count = led_count;
 
     led_strip_config_t strip_config = {
-        .strip_gpio_num = LED_GPIO,
-        .max_leds = LED_COUNT,
+        .strip_gpio_num = s_led_gpio,
+        .max_leds = (uint32_t)s_led_count,
         .led_model = LED_MODEL_WS2812,
         .color_component_format = LED_STRIP_COLOR_COMPONENT_FMT_GRB,
         .flags.invert_out = false,
@@ -146,7 +155,7 @@ esp_err_t led_manager_init(void){
         return ESP_FAIL;
     }
 
-    LOG_INFO(TAG, "RGB LED initialized");
+    LOG_INFO(TAG, "RGB LED initialized on GPIO %d x%d", s_led_gpio, s_led_count);
 
     return ESP_OK;
 }

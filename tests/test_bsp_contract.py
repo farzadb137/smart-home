@@ -1,4 +1,7 @@
-"""BSP contract — Phase B-minimal. Run: pytest tests/test_bsp_contract.py -v"""
+"""BSP contract — Phase B-minimal + B-full compatible. Run: pytest tests/test_bsp_contract.py -v
+v2: checks for led_manager_init (any args) so it passes both before and after B-full.
+Replace your old tests/test_bsp_contract.py with this file when applying B-full.
+"""
 import pathlib, re
 REPO = pathlib.Path(__file__).resolve().parents[1]
 BOARDS = {"smart-temp-sensor": "BSP_TEMP_GPIO", "smart-switch": "BSP_RELAY_GPIO", "smart-door-sensor": "BSP_CONTACT_GPIO"}
@@ -26,7 +29,9 @@ def test_main_calls_bsp_init():
         if not m.exists(): continue
         t = m.read_text()
         assert "bsp_init()" in t, f"{app}/main.c missing bsp_init()"
-        assert t.index("bsp_init()") < t.index("led_manager_init()"), f"{app}: bsp_init must be before led init"
+        # v2: match led_manager_init with ANY args (void before B-full, BSP_* after)
+        assert "led_manager_init" in t, f"{app}: missing led_manager_init"
+        assert t.index("bsp_init()") < t.index("led_manager_init"), f"{app}: bsp_init must be before led init"
 def test_main_cmake_references_bsp():
     for app in ["smart-temp-sensor", "smart-switch", "smart-door-sensor"]:
         mk = REPO / "firmware" / "apps" / app / "main" / "CMakeLists.txt"

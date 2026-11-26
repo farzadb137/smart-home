@@ -9,11 +9,11 @@
 #include "esp_timer.h"
 #include "esp_system.h"
 
-#define BUTTON_PIN GPIO_NUM_20
-
 #define BUTTON_PRESSED_THRESHOLD    5000
 
 static const char *TAG = "BUTTON";
+
+static int s_button_gpio = -1;
 
 static void button_task(void *args){
 
@@ -23,7 +23,7 @@ static void button_task(void *args){
 
     while(1){
 
-        current_state = gpio_get_level(BUTTON_PIN);
+        current_state = gpio_get_level(s_button_gpio);
         if((current_state != last_state) && (current_state == 0))
             start_time = esp_timer_get_time() / 1000;
         else if((current_state == last_state) && (current_state == 0)){
@@ -46,10 +46,17 @@ static void button_task(void *args){
 
 }
 
-esp_err_t button_manager_init(void){
+esp_err_t button_manager_init(int gpio_num){
+
+    if(gpio_num < 0 || gpio_num >= GPIO_NUM_MAX){
+        LOG_ERROR(TAG, "invalid button gpio %d", gpio_num);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    s_button_gpio = gpio_num;
 
     gpio_config_t button_config = {
-        .pin_bit_mask = (1ULL << BUTTON_PIN),
+        .pin_bit_mask = (1ULL << s_button_gpio),
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = GPIO_PULLUP_ENABLE,
         .pull_down_en = GPIO_PULLDOWN_DISABLE,
@@ -58,7 +65,7 @@ esp_err_t button_manager_init(void){
 
     gpio_config(&button_config);
 
-    LOG_INFO(TAG, "Starting button task");
+    LOG_INFO(TAG, "Starting button task on GPIO %d", s_button_gpio);
 
     xTaskCreate(button_task, "button_task", 2048, NULL, 10, NULL);
 

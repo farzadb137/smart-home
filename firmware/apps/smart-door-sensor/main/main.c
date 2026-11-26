@@ -17,14 +17,14 @@ void app_main(void){
 	
 	bsp_init();
 
-    led_manager_init();
+    led_manager_init(BSP_LED_GPIO, BSP_LED_COUNT);
     led_manager_set_state(LED_STATE_BOOT);
 
     logger_init();
 
     config_manager_init();
 
-    button_manager_init();
+    button_manager_init(BSP_BUTTON_GPIO);
 
     device_info_init(DEVICE_TYPE_DOOR_SENSOR, "SmartDoor-V1.0", "0.5.1");
 

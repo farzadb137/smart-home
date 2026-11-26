@@ -7,7 +7,7 @@ extern "C"{
 
 #include "esp_err.h"
 
-esp_err_t button_manager_init(void);
+esp_err_t button_manager_init(int gpio_num);
 
 #ifdef __cplusplus
 }
