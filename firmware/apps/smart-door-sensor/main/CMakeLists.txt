@@ -1,5 +1,7 @@
-idf_component_register(SRCS "main.c" "capability_drivers.c"
-                    INCLUDE_DIRS "."
+set(BSP_DIR ${CMAKE_CURRENT_LIST_DIR}/../../../bsp/smart-door-sensor/rev-A)
+
+idf_component_register(SRCS "main.c" "capability_drivers.c" "${BSP_DIR}/src/bsp.c"
+                    INCLUDE_DIRS "." "${BSP_DIR}/include"
                     REQUIRES 
                         led_manager
                         logger
